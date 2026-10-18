@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simplex Arcade</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Press+Start+2P&family=VT323&display=swap">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            void: '#0a0716', panel: '#140f2b', line: '#2b2255', ink: '#e9e4ff',
+            mute: '#9b8fc9', phos: '#3cf0ff', hot: '#ff3ea5', coin: '#ffd23f', win: '#5cff7a', lose: '#ff4d5e',
+          },
+          fontFamily: {
+            pixel: ['"Press Start 2P"', 'ui-monospace', 'monospace'],
+            crt: ['VT323', 'ui-monospace', 'Consolas', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="stylesheet" href="css/arcade.css">
+</head>
+<body class="bg-void text-ink font-crt">
+  <div class="crt" aria-hidden="true"></div>
+
+  <header class="marquee">
+    <div class="mx-auto max-w-[1440px] px-4 sm:px-6 py-5 flex flex-wrap items-center justify-between gap-5">
+      <div class="flex flex-col gap-2">
+        <p class="font-pixel text-[9px] tracking-[0.2em] text-mute">INVESTIGACIÓN DE OPERACIONES · 1ER PREVIO</p>
+        <h1 class="title font-pixel">SIMPLEX<span>ARCADE</span></h1>
+        <p class="font-pixel text-[9px] text-coin blink">INSERT COIN ▸ PRESS START</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <button id="btn-sound" class="px-btn px-btn--ghost" type="button" aria-pressed="true">♪ SONIDO ON</button>
+        <button id="btn-ai" class="px-btn px-btn--coin" type="button"><span id="ai-led" class="led"></span>OPENROUTER</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-[1440px] px-4 sm:px-6 pb-16 grid gap-8 lg:grid-cols-[minmax(360px,440px)_minmax(0,1fr)] items-start">
+    <div class="flex flex-col gap-8 min-w-0">
+      <div class="modes" role="tablist" aria-label="Modo de juego">
+        <button class="mode" role="tab" data-mode="simplex" aria-selected="true" type="button"><span>1P</span>SIMPLEX REVISADO</button>
+        <button class="mode" role="tab" data-mode="dual" aria-selected="false" type="button"><span>2P</span>DUALIDAD</button>
+      </div>
+
+      <section class="px-panel" aria-labelledby="t-modelo">
+        <h2 id="t-modelo" class="panel-tag">MODELO</h2>
+        <div class="flex flex-wrap gap-2 mb-5" aria-label="Ejemplos">
+          <span class="font-pixel text-[9px] text-mute self-center mr-1">EJEMPLOS</span>
+          <button class="px-chip" data-example="0" type="button">MAX ≤</button>
+          <button class="px-chip" data-example="1" type="button">MIN ≥ =</button>
+          <button class="px-chip" data-example="2" type="button">RADIOTERAPIA</button>
+          <button class="px-chip" data-example="3" type="button">TABLERO (≤0, IRRESTRICTA)</button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <label class="field"><span>OBJETIVO</span>
+            <select id="sense" class="px-input"><option value="max">MAXIMIZAR</option><option value="min">MINIMIZAR</option></select>
+          </label>
+          <label class="field"><span>MÉTODO (ARTIFICIALES)</span>
+            <select id="method" class="px-input"><option value="bigM">GRAN M</option><option value="twoPhase">DOS FASES</option></select>
+          </label>
+          <label class="field"><span>VARIABLES</span>
+            <input id="nvars" class="px-input" type="number" min="1" max="10" value="2">
+          </label>
+          <label class="field"><span>RESTRICCIONES</span>
+            <input id="ncons" class="px-input" type="number" min="1" max="12" value="3">
+          </label>
+        </div>
+
+        <div id="grid" class="model-grid scroll-x mt-6"></div>
+        <p class="small t-mute mt-3">Acepta enteros, decimales (0.5) o fracciones (3/4). Una celda vacía vale 0. En la fila SIGNO eliges si cada variable es ≥ 0, ≤ 0 o irrestricta.</p>
+        <label class="px-check mt-5">
+          <input id="graphic" type="checkbox">
+          <span class="px-check-box" aria-hidden="true"></span>
+          <span>INCLUIR DESPEJES Y GRÁFICA <span class="t-mute">(cuando hay 2 variables)</span></span>
+        </label>
+        <p id="form-error" class="form-error" role="alert" hidden></p>
+
+        <div class="flex flex-wrap gap-3 mt-6">
+          <button id="btn-solve" class="px-btn px-btn--start" type="button">▶ START</button>
+          <button id="btn-clear" class="px-btn px-btn--ghost" type="button">LIMPIAR</button>
+        </div>
+      </section>
+
+      <section class="px-panel" aria-labelledby="t-boveda">
+        <h2 id="t-boveda" class="panel-tag panel-tag--coin">BÓVEDA DE EJERCICIOS</h2>
+        <h3 class="vault-sub">MEMORIAS DEL INFORME</h3>
+        <p class="small t-mute mb-3">Los 3 ejercicios del PDF. Elige uno, pulsa ▶ START y compara con el informe.</p>
+        <ul id="vault-presets" class="vault-list mb-6" aria-label="Ejercicios del informe"></ul>
+
+        <h3 class="vault-sub">MIS EJERCICIOS</h3>
+        <p class="small t-mute mb-3">Resuelve un ejercicio y guárdalo aquí para volver a mostrarlo cuando quieras, con su explicación.</p>
+        <form id="vault-form" class="flex gap-2">
+          <input id="vault-name" class="px-input" maxlength="60" autocomplete="off" placeholder="Primero pulsa ▶ START" aria-label="Nombre del ejercicio" disabled>
+          <button id="vault-save" class="px-btn px-btn--coin" type="submit" disabled>GUARDAR</button>
+        </form>
+        <p id="vault-msg" class="small t-mute mt-2" role="status"></p>
+        <ul id="vault-list" class="vault-list mt-4" aria-label="Ejercicios guardados"></ul>
+        <div class="flex flex-wrap gap-3 mt-5">
+          <button id="vault-export" class="px-btn px-btn--ghost" type="button">EXPORTAR ARCHIVO</button>
+          <button id="vault-import" class="px-btn px-btn--ghost" type="button">IMPORTAR ARCHIVO</button>
+          <input id="vault-file" type="file" accept=".json,application/json" hidden>
+        </div>
+      </section>
+    </div>
+
+    <section id="screen" class="screen min-w-0" aria-live="polite" aria-label="Resultado"></section>
+  </main>
+
+  <footer class="mx-auto max-w-[1440px] px-4 sm:px-6 pb-10 small t-mute">
+    Cálculo exacto con fracciones · resultados comprobados con la librería javascript-lp-solver 1.0.3 · explicación a detalle con IA vía OpenRouter
+  </footer>
+
+  <dialog id="dlg-ai" class="dialog">
+    <form method="dialog" class="flex flex-col gap-5">
+      <div class="flex items-start justify-between gap-4">
+        <h2 class="font-pixel text-coin text-[13px] leading-relaxed">CONFIGURAR OPENROUTER</h2>
+        <button class="px-btn px-btn--ghost" value="cancel" type="submit" aria-label="Cerrar">✕</button>
+      </div>
+      <label class="field"><span>API KEY</span>
+        <div class="flex gap-2">
+          <input id="ai-key" class="px-input" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-...">
+          <button id="ai-show" class="px-btn px-btn--ghost" type="button">VER</button>
+        </div>
+      </label>
+      <label class="field"><span>MODELO GRATUITO</span>
+        <select id="ai-model" class="px-input"></select>
+      </label>
+      <div class="flex flex-wrap gap-3">
+        <button id="ai-load" class="px-btn px-btn--ghost" type="button">CARGAR MODELOS GRATIS</button>
+        <button id="ai-test" class="px-btn px-btn--ghost" type="button">PROBAR CONEXIÓN</button>
+      </div>
+      <p id="ai-status" class="small t-mute" role="status">La key se guarda solo en este navegador. No compartas esta página con tu key puesta.</p>
+      <div class="flex flex-wrap gap-3 justify-end">
+        <button id="ai-forget" class="px-btn px-btn--ghost" type="button">BORRAR KEY</button>
+        <button id="ai-save" class="px-btn px-btn--coin" type="button">GUARDAR</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/javascript-lp-solver@1.0.3/dist/solver.global.js"></script>
+  <script src="js/fraction.js"></script>
+  <script src="js/linalg.js"></script>
+  <script src="js/solver.js"></script>
+  <script src="js/dual.js"></script>
+  <script src="js/graphic.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/verify.js"></script>
+  <script src="js/notebook.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/vault.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

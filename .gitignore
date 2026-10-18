@@ -1,0 +1,13 @@
+# Archivos auxiliares de LaTeX (se regeneran al compilar con pdflatex)
+documentacion/*.aux
+documentacion/*.log
+documentacion/*.out
+documentacion/*.toc
+documentacion/*.synctex.gz
+documentacion/*.fls
+documentacion/*.fdb_latexmk
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store

@@ -1,0 +1,1133 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[spanish,es-noshorthands,es-nodecimaldot]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+\usepackage[most]{tcolorbox}
+\usepackage{booktabs,array}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+% ---------- Colores (blanco y negro) ----------
+\definecolor{tinta}{gray}{0}
+\definecolor{nota}{gray}{0}
+\definecolor{entra}{gray}{0}
+\definecolor{sale}{gray}{0}
+\definecolor{azul}{gray}{0}
+\definecolor{resalta}{gray}{0.82}
+\definecolor{region}{gray}{0.80}
+
+% Estilos de línea para distinguir restricciones sin usar color
+\tikzset{
+  r1/.style={thick},
+  r2/.style={thick, dashed},
+  r3/.style={very thick, dotted},
+  r4/.style={thick, dash dot},
+  zline/.style={thick, gray!55},
+}
+\newcommand{\swatch}[1]{\tikz[baseline=-0.6ex]\draw[#1] (0,0)--(0.6,0);}
+
+% ---------- Atajos ----------
+\newcommand{\nota}[1]{\qquad\text{\small\color{nota}\itshape$\leftarrow$ #1}}
+\newcommand{\entra}[1]{\textcolor{entra}{\textbf{#1}}}
+\newcommand{\sale}[1]{\textcolor{sale}{\textbf{#1}}}
+\newcommand{\res}[1]{\colorbox{resalta}{$\displaystyle #1$}}
+\newcommand{\Binv}{B^{-1}}
+\newcommand{\paso}[1]{\par\medskip\noindent{\color{tinta}\bfseries\large #1}\par\smallskip}
+\renewcommand{\arraystretch}{1.25}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+
+\newtcolorbox{idea}[1][]{enhanced, breakable, colback=nota!6, colframe=nota!70!black,
+  arc=2mm, boxrule=0.6pt, left=8pt, right=8pt, top=6pt, bottom=6pt,
+  fonttitle=\bfseries, title={#1}}
+\newtcolorbox{ojo}{enhanced, breakable, colback=resalta!35, colframe=resalta!80!black,
+  arc=2mm, boxrule=0.5pt, left=8pt, right=8pt, top=4pt, bottom=4pt}
+
+\title{\textbf{Método Simplex Revisado}\\[4pt]\large Explicación del método y ejercicios resueltos}
+\author{Investigación de Operaciones · Primer previo}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+% =====================================================================
+\part{¿En qué consiste el Método Simplex Revisado?}
+
+\section{¿Qué tipo de problema resuelve?}
+
+Muchas decisiones de una empresa consisten en \textbf{repartir recursos que son limitados} (horas de trabajo,
+materia prima, dinero, espacio) para \textbf{ganar lo máximo} o \textbf{gastar lo mínimo}. Cuando esos problemas
+se pueden escribir usando solo sumas y multiplicaciones por números fijos, se les llama problemas de
+\textbf{programación lineal}. El método simplex es la forma más conocida de resolverlos.
+
+Para entenderlo usaremos un ejemplo pequeño, que en la Parte II se resuelve completo:
+
+\begin{ojo}
+Una fábrica hace \textbf{puertas} y \textbf{ventanas}. Cada lote de puertas deja una ganancia de 3 (miles de
+dólares) y cada lote de ventanas deja 5. Los productos pasan por tres plantas con horas limitadas:
+la planta 1 tiene 4 horas (cada lote de puertas usa 1), la planta 2 tiene 12 horas (cada lote de ventanas usa 2)
+y la planta 3 tiene 18 horas (las puertas usan 3 y las ventanas 2). ¿Cuánto conviene fabricar de cada uno?
+\end{ojo}
+
+Todo problema de programación lineal tiene estas partes:
+
+\begin{center}\small
+\begin{tabular}{p{3.4cm}p{6.2cm}p{4.6cm}}
+\toprule
+\textbf{Parte} & \textbf{Qué es} & \textbf{En el ejemplo} \\
+\midrule
+Variables de decisión & Lo que tenemos que decidir. & $x_1$ = lotes de puertas \newline $x_2$ = lotes de ventanas \\
+Función objetivo & Lo que queremos hacer lo más grande (o lo más pequeño) posible. & Ganancia: $Z = 3x_1 + 5x_2$ \\
+Restricciones & Los límites que no se pueden pasar. & $x_1 \le 4$ \newline $2x_2 \le 12$ \newline $3x_1 + 2x_2 \le 18$ \\
+No negatividad & No se pueden fabricar cantidades negativas. & $x_1 \ge 0,\ x_2 \ge 0$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =====================================================================
+\section{La idea del método simplex}
+
+Si dibujamos todas las combinaciones de puertas y ventanas que respetan los límites, obtenemos una figura
+(la zona gris). Cada punto de esa zona es un plan de producción posible.
+
+\begin{center}
+\begin{tikzpicture}[scale=0.55, >=Stealth]
+  \fill[region] (0,0)--(4,0)--(4,3)--(2,6)--(0,6)--cycle;
+  \draw[very thin, gray!30] (0,0) grid (8,9);
+  \draw[->] (0,0)--(8.5,0) node[right] {$x_1$ (puertas)};
+  \draw[->] (0,0)--(0,9.5) node[above] {$x_2$ (ventanas)};
+  \foreach \x in {2,4,6,8} \node[below, font=\scriptsize] at (\x,0) {\x};
+  \foreach \y in {2,4,6,8} \node[left, font=\scriptsize] at (0,\y) {\y};
+  \draw[r1] (4,0)--(4,9);
+  \draw[r2] (0,6)--(8,6);
+  \draw[r3] (0,9)--(6,0);
+  \draw[->, ultra thick] (0,0)--(0,5.75);
+  \draw[->, ultra thick] (0,6)--(1.75,6);
+  \foreach \p/\n/\pos in {(0,0)/A/below left, (4,0)/B/above right, (4,3)/C/right, (2,6)/D/above right, (0,6)/E/above right}
+    \fill \p circle (3.5pt) node[\pos, font=\small\bfseries] {\n};
+\end{tikzpicture}
+\end{center}
+
+Hay un resultado muy importante: \textbf{la mejor solución siempre está en una de las esquinas} de la figura
+(en el dibujo, los puntos A, B, C, D y E). El problema es que en casos reales puede haber miles o millones de
+esquinas, y revisarlas todas no es práctico. El método simplex hace algo más inteligente:
+
+\begin{enumerate}[itemsep=3pt]
+  \item Empieza en una esquina fácil de encontrar: normalmente \textbf{no fabricar nada} (punto A).
+  \item Revisa si moverse hacia una esquina vecina \textbf{mejora} la ganancia.
+  \item Si alguna mejora, se mueve hacia la que más promete.
+  \item Repite hasta llegar a una esquina donde \textbf{ninguna vecina mejora}. Esa es la solución óptima.
+\end{enumerate}
+
+En el ejemplo el método recorre A $\to$ E $\to$ D (las flechas del dibujo): empieza sin fabricar nada
+($Z = 0$), luego fabrica 6 lotes de ventanas ($Z = 30$) y termina fabricando 2 lotes de puertas y 6 de ventanas
+($Z = 36$). No necesita visitar B ni C.
+
+% =====================================================================
+\section{¿Qué tiene de ``revisado''?}
+
+La versión tradicional del simplex trabaja con una \textbf{tabla} que contiene todos los números del problema.
+En cada paso esa tabla se \textbf{vuelve a escribir completa}, aunque para decidir el siguiente movimiento solo se
+usan unos pocos números. Con un problema pequeño esto no importa, pero con miles de variables es muchísimo trabajo.
+
+El \textbf{Simplex Revisado} visita las mismas esquinas y llega al mismo resultado, pero organiza el trabajo de
+otra manera: en lugar de reescribir toda la tabla, guarda solo una matriz pequeña, llamada $\Binv$, y cada vez
+que necesita un número lo calcula usando esa matriz y los datos originales del problema, que nunca se modifican.
+
+\begin{center}\small
+\begin{tabular}{p{3.6cm}p{5.2cm}p{5.4cm}}
+\toprule
+ & \textbf{Simplex tradicional (tabla)} & \textbf{Simplex Revisado} \\
+\midrule
+¿Qué se guarda? & La tabla completa. & Solo la matriz $\Binv$ y los datos originales. \\
+¿Qué se actualiza en cada paso? & Todos los números de la tabla. & Solo $\Binv$. \\
+¿Cuándo conviene? & Problemas pequeños, a mano. & Problemas grandes y en computadora. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Una forma de imaginarlo: en vez de copiar todo el cuaderno cada vez que se avanza, se lleva una sola hoja
+de resumen ($\Binv$) y, cuando hace falta un dato, se consulta el enunciado original.
+
+% =====================================================================
+\section{Antes de empezar: preparar el problema}
+
+El método necesita que todas las restricciones sean \textbf{igualdades} ($=$). Para lograrlo se agregan
+variables auxiliares:
+
+\begin{description}[leftmargin=0pt, itemsep=5pt]
+  \item[Restricción ``$\le$'': se suma una holgura.] La holgura representa \textbf{lo que sobra} del recurso.
+        Por ejemplo, $x_1 \le 4$ se escribe $x_1 + s_1 = 4$: si se fabrica 1 lote de puertas, sobran $s_1 = 3$ horas.
+  \item[Restricción ``$\ge$'': se resta un exceso.] El exceso representa \textbf{cuánto se pasa} del mínimo.
+        Por ejemplo, $x_1 + x_2 \ge 5$ se escribe $x_1 + x_2 - e_1 = 5$.
+  \item[Restricciones ``$\ge$'' y ``$=$'': se agrega además una variable artificial.] Es una variable
+        \textbf{ayudante} que solo sirve para poder arrancar el método. Al final \textbf{debe valer cero}; si no
+        se puede lograr, el problema no tiene solución. Hay dos formas de hacerla desaparecer: el método de la
+        \textbf{Gran M} (se le pone un castigo enorme en la función objetivo) y el método de las
+        \textbf{Dos Fases} (primero se eliminan las ayudantes y después se busca la mejor ganancia).
+  \item[Si el problema es de minimizar,] se cambian los signos de la función objetivo y se maximiza. Al final
+        se le vuelve a cambiar el signo al resultado.
+\end{description}
+
+Las holguras (y las artificiales, si las hay) son el punto de partida: al principio \textbf{no se fabrica nada
+y todo el recurso sobra}. En el ejemplo el problema preparado queda:
+\[
+\begin{aligned}
+\text{Max } Z &= 3x_1 + 5x_2 \\
+x_1 + s_1 &= 4 \\
+2x_2 + s_2 &= 12 \\
+3x_1 + 2x_2 + s_3 &= 18
+\end{aligned}
+\]
+
+% =====================================================================
+\section{Las palabras que se usan}
+
+\begin{center}\small
+\begin{tabular}{p{3.2cm}p{11cm}}
+\toprule
+\textbf{Término} & \textbf{Qué significa} \\
+\midrule
+Iteración & Cada vuelta del método; en cada una se pasa de una esquina a otra. \\
+Variables básicas & Las variables que están ``activas'' en la esquina actual y pueden valer más que cero.
+                    Siempre hay tantas como restricciones. Al inicio son las holguras. \\
+Variables no básicas & Las que valen cero en la esquina actual. \\
+Base & El grupo de variables básicas. \\
+$B$ y $\Binv$ & $B$ es la matriz formada por las columnas de las variables básicas; $\Binv$ es su inversa.
+               Al inicio $B$ es la matriz identidad, así que $\Binv$ también. \\
+$b$ & Los números del lado derecho de las restricciones (lo disponible de cada recurso). \\
+$x_B$ & Cuánto vale cada variable básica. \\
+$c_B$ & La ganancia de cada variable básica (las holguras tienen ganancia 0). \\
+$\pi$ & Cuánto vale una unidad extra de cada recurso. También se llama \textbf{precio sombra}. \\
+$z_j - c_j$ & Indica si conviene activar una variable: si es negativo, activarla aumenta la ganancia. \\
+$\alpha$ & Cuánto cambia cada variable básica cuando la nueva variable aumenta en una unidad. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =====================================================================
+\section{Los pasos del Simplex Revisado}\label{sec:algoritmo}
+
+Cada iteración responde cinco preguntas, siempre en el mismo orden. Para que se entiendan, se muestra lo que
+ocurre en la primera iteración del ejemplo.
+
+\paso{Paso 1. ¿Cuánto vale cada variable básica ahora?}
+Se multiplica la matriz $\Binv$ por el lado derecho $b$, y la ganancia se obtiene multiplicando la ganancia de
+cada básica por su valor:
+\[
+x_B = \Binv\, b, \qquad Z = c_B \cdot x_B .
+\]
+\textit{En el ejemplo:} al inicio $\Binv$ es la identidad, así que $x_B = b$: sobran $s_1 = 4$, $s_2 = 12$ y
+$s_3 = 18$ horas, y la ganancia es $Z = 0$ porque todavía no se fabrica nada.
+
+\paso{Paso 2. ¿Cuánto vale cada recurso?}
+Se multiplica la fila de ganancias de las básicas por $\Binv$:
+\[
+\pi = c_B \cdot \Binv .
+\]
+\textit{En el ejemplo:} las holguras no dan ganancia, así que $\pi = (0,\ 0,\ 0)$: por ahora ninguna hora extra
+aumentaría la ganancia.
+
+\paso{Paso 3. ¿Conviene activar alguna variable?}
+Para cada variable que vale cero (no básica) se calcula
+\[
+z_j - c_j = \pi \cdot a_j - c_j ,
+\]
+donde $a_j$ es la columna de números de esa variable en las restricciones y $c_j$ su ganancia.
+\begin{itemize}[itemsep=2pt]
+  \item Si \textbf{ninguno es negativo}, ya no se puede mejorar: \textbf{se llegó a la solución óptima}.
+  \item Si hay negativos, \entra{entra} a la base la variable con el valor \textbf{más negativo}, porque es la que
+        más aumenta la ganancia por cada unidad.
+\end{itemize}
+\textit{En el ejemplo:} para las puertas $0 - 3 = -3$ y para las ventanas $0 - 5 = -5$. El más negativo es
+$-5$, así que entran las ventanas ($x_2$).
+
+\paso{Paso 4. ¿Qué variable sale?}
+Al aumentar la variable que entra, las demás van cambiando y alguna llega a cero primero. Para saber cuál,
+se calcula $\alpha = \Binv \cdot a_{\text{entra}}$ y se divide cada valor de $x_B$ entre su $\alpha$
+(\textbf{solo cuando $\alpha$ es positivo}). La división más pequeña indica la variable que \sale{sale}.
+\begin{itemize}[itemsep=2pt]
+  \item La división más pequeña corresponde al recurso que \textbf{se agota primero}.
+  \item Si ningún $\alpha$ es positivo, la variable puede crecer sin límite: el problema es \textbf{no acotado}.
+\end{itemize}
+\textit{En el ejemplo:} $\alpha = (0,\ 2,\ 2)$. Para $s_1$ no se divide ($\alpha = 0$); para $s_2$: $12/2 = 6$;
+para $s_3$: $18/2 = 9$. La menor es 6, así que sale $s_2$: con 6 lotes de ventanas la planta 2 se queda sin horas.
+
+\paso{Paso 5. Actualizar $\Binv$}
+Como cambió una variable de la base, hay que actualizar la hoja de resumen. La forma más sencilla de hacerlo
+a mano es trabajar por filas sobre $\Binv$:
+\begin{enumerate}[itemsep=2pt]
+  \item La fila de la variable que sale se \textbf{divide} entre su $\alpha$.
+  \item A cada una de las otras filas se le \textbf{resta} su $\alpha$ multiplicado por la fila del punto anterior.
+\end{enumerate}
+Esto es lo mismo que calcular $\Binv_{\text{nueva}} = E \cdot \Binv$, donde $E$ es la matriz identidad con una
+columna cambiada (en la Parte II se muestra en cada ejercicio). Después se vuelve al paso 1.
+
+\textit{En el ejemplo:} la fila 2 se divide entre 2 y a la fila 3 se le resta 2 veces esa fila. Así se obtiene
+la nueva $\Binv$ y comienza la iteración 1.
+
+\begin{idea}[Resumen de los pasos]
+\begin{enumerate}[leftmargin=*, itemsep=3pt]
+  \item[\textbf{0.}] Preparar el problema (holguras, excesos y artificiales). Al inicio $\Binv = I$.
+  \item \textbf{Valor de las básicas:} \quad $x_B = \Binv b$ \quad y \quad $Z = c_B\, x_B$.
+  \item \textbf{Valor de los recursos:} \quad $\pi = c_B\, \Binv$.
+  \item \textbf{¿Conviene activar alguna variable?} \quad $z_j - c_j = \pi\, a_j - c_j$.
+        Si ninguno es negativo, es óptimo; si no, entra el más negativo.
+  \item \textbf{¿Quién sale?} \quad $\alpha = \Binv a_{\text{entra}}$; la menor división $x_B / \alpha$ (con $\alpha > 0$).
+  \item \textbf{Actualizar} $\Binv$ y volver al paso 1.
+\end{enumerate}
+\end{idea}
+
+\begin{center}
+\begin{tikzpicture}[node distance=6mm and 9mm, >=Stealth,
+  caja/.style={draw, rounded corners=2pt, fill=gray!8, align=center, minimum width=5.6cm, inner sep=5pt, font=\small},
+  decision/.style={draw, diamond, aspect=2.4, fill=gray!18, align=center, inner sep=1pt, font=\small},
+  fin/.style={draw, rounded corners=8pt, fill=gray!25, align=center, minimum width=2.8cm, inner sep=6pt, font=\small}]
+  \node[caja] (ini) {Preparar el problema\\ (se empieza sin fabricar nada)};
+  \node[caja, below=of ini] (val) {1. Valor de las básicas y de los recursos};
+  \node[decision, below=of val] (opt) {¿Conviene activar\\ alguna variable?};
+  \node[fin, right=of opt] (optimo) {\textbf{Solución óptima}};
+  \node[caja, below=of opt] (entra) {Entra la de valor más negativo};
+  \node[decision, below=of entra] (acot) {¿Hay algún\\ $\alpha$ positivo?};
+  \node[fin, right=of acot] (noacot) {\textbf{No acotado}};
+  \node[caja, below=of acot] (sale) {Sale la de menor división\\ y se actualiza $\Binv$};
+  \draw[->] (ini) -- (val);
+  \draw[->] (val) -- (opt);
+  \draw[->] (opt) -- node[above, font=\scriptsize] {no} (optimo);
+  \draw[->] (opt) -- node[right, font=\scriptsize] {sí} (entra);
+  \draw[->] (entra) -- (acot);
+  \draw[->] (acot) -- node[above, font=\scriptsize] {no} (noacot);
+  \draw[->] (acot) -- node[right, font=\scriptsize] {sí} (sale);
+  \draw[->] (sale.west) -- ++(-0.9,0) |- node[pos=0.25, left, font=\scriptsize, align=center] {siguiente\\iteración} (val.west);
+\end{tikzpicture}
+\end{center}
+
+% =====================================================================
+\section{¿Cómo se sabe que terminó?}
+
+\begin{description}[leftmargin=0pt, itemsep=5pt]
+  \item[Solución óptima.] En el paso 3 ningún $z_j - c_j$ es negativo: ninguna esquina vecina mejora.
+  \item[Problema no acotado.] En el paso 4 ningún $\alpha$ es positivo: la ganancia podría crecer sin fin.
+        Normalmente significa que falta alguna restricción en el modelo.
+  \item[Problema sin solución.] Al terminar, alguna variable artificial (ayudante) sigue valiendo más que cero:
+        no existe ningún plan que cumpla todas las restricciones a la vez.
+  \item[Varias soluciones óptimas.] Al terminar, alguna variable no básica tiene $z_j - c_j = 0$: se puede
+        activar sin que la ganancia cambie, así que hay más de un plan igual de bueno.
+  \item[Empates.] Si la división más pequeña da cero, el método cambia de base sin mejorar la ganancia. En casos
+        muy raros podría repetir pasos sin avanzar; para evitarlo se elige siempre la variable con el número más
+        bajo (regla de Bland).
+\end{description}
+
+% =====================================================================
+\section{¿Qué información extra se obtiene?}
+
+Al terminar, los valores de $\pi$ dicen \textbf{cuánto aumentaría la ganancia si se tuviera una unidad más de
+cada recurso}. En el ejemplo, al final $\pi = (0,\ \tfrac32,\ 1)$:
+
+\begin{itemize}[itemsep=2pt]
+  \item Una hora más en la planta 1 no sirve de nada (ya le sobran horas): vale 0.
+  \item Una hora más en la planta 2 aumentaría la ganancia en 1.5 (es decir, \$1\,500).
+  \item Una hora más en la planta 3 aumentaría la ganancia en 1 (\$1\,000).
+\end{itemize}
+
+Esto ayuda a decidir, por ejemplo, en qué planta conviene invertir en horas extra. Estos mismos valores son
+la solución del llamado \textbf{problema dual}.
+
+% =====================================================================
+\section{Ventajas y desventajas}
+
+\begin{center}\small
+\begin{tabular}{p{7.2cm}p{7.2cm}}
+\toprule
+\textbf{Ventajas} & \textbf{Desventajas} \\
+\midrule
+\begin{itemize}[leftmargin=*, itemsep=2pt, topsep=2pt]
+  \item Usa menos memoria, porque solo guarda $\Binv$.
+  \item Hace menos cálculos cuando el problema tiene muchas variables.
+  \item Los datos originales nunca se modifican, así que es más difícil equivocarse al arrastrar números.
+  \item Da directamente el valor de cada recurso ($\pi$).
+\end{itemize}
+&
+\begin{itemize}[leftmargin=*, itemsep=2pt, topsep=2pt]
+  \item A mano hay que multiplicar matrices en cada paso.
+  \item En problemas pequeños no ahorra trabajo frente a la tabla tradicional.
+  \item Hay que volver a calcular $z_j - c_j$ en cada iteración.
+\end{itemize}
+\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =====================================================================
+\newpage
+\part{Ejercicios resueltos}
+\setcounter{section}{0}
+
+Los tres ejercicios siguientes aplican, uno por uno, los pasos de la sección~\ref{sec:algoritmo}. En cada iteración se
+indica de dónde sale cada valor y, al final, se muestra la interpretación gráfica.
+
+% =====================================================================
+\section{Wyndor Glass Co.: puertas y ventanas}
+\textit{Fuente: Hillier y Lieberman, Introducción a la Investigación de Operaciones, cap.~3.}
+
+\subsection*{Planteamiento del problema}
+Una fábrica de vidrio quiere lanzar dos productos nuevos: una \textbf{puerta de vidrio con marco de aluminio}
+y una \textbf{ventana con marco de madera}. Se producen por lotes y pasan por tres plantas:
+
+\begin{center}\small
+\begin{tabular}{lccc}
+\toprule
+ & \textbf{Puertas} (por lote) & \textbf{Ventanas} (por lote) & \textbf{Horas por semana} \\
+\midrule
+Planta 1 (marcos de aluminio) & 1 h & 0 h & 4 \\
+Planta 2 (marcos de madera)   & 0 h & 2 h & 12 \\
+Planta 3 (vidrio y ensamble)  & 3 h & 2 h & 18 \\
+\midrule
+Ganancia por lote & \$3\,000 & \$5\,000 & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La pregunta: \textbf{¿cuántos lotes de cada producto conviene fabricar por semana para ganar lo máximo?}
+
+\subsection*{Formulación del modelo}
+\begin{itemize}[itemsep=2pt]
+  \item $x_1$ = lotes de puertas por semana, \quad $x_2$ = lotes de ventanas por semana.
+  \item \textbf{Ganancia} (en miles de dólares): cada lote de puertas deja 3 y cada lote de ventanas deja 5, así que
+        $Z = 3x_1 + 5x_2$.
+  \item \textbf{Planta 1:} solo las puertas pasan por ahí (1 h por lote) y hay 4 h $\Rightarrow x_1 \le 4$.
+  \item \textbf{Planta 2:} solo las ventanas (2 h por lote) y hay 12 h $\Rightarrow 2x_2 \le 12$.
+  \item \textbf{Planta 3:} las dos pasan (3 h y 2 h) y hay 18 h $\Rightarrow 3x_1 + 2x_2 \le 18$.
+  \item No se fabrican lotes negativos: $x_1, x_2 \ge 0$.
+\end{itemize}
+
+\[
+\begin{aligned}
+\text{Max } Z &= 3x_1 + 5x_2\\
+\text{s.a. } \quad x_1 &\le 4\\
+2x_2 &\le 12\\
+3x_1 + 2x_2 &\le 18\\
+x_1, x_2 &\ge 0
+\end{aligned}
+\]
+
+\subsection*{Forma estándar}
+Cada ``$\le$'' se vuelve igualdad sumándole una \textbf{holgura}: son las \textbf{horas que sobran} en cada planta.
+\begin{align*}
+x_1 + s_1 &= 4 \nota{$s_1$ = horas libres de la planta 1}\\
+2x_2 + s_2 &= 12 \nota{$s_2$ = horas libres de la planta 2}\\
+3x_1 + 2x_2 + s_3 &= 18 \nota{$s_3$ = horas libres de la planta 3}
+\end{align*}
+Con el orden de columnas $(x_1, x_2, s_1, s_2, s_3)$:
+\[
+A = \begin{bmatrix} 1 & 0 & 1 & 0 & 0\\ 0 & 2 & 0 & 1 & 0\\ 3 & 2 & 0 & 0 & 1 \end{bmatrix},\qquad
+b = \begin{bmatrix} 4\\ 12\\ 18 \end{bmatrix},\qquad
+c = (3,\ 5,\ 0,\ 0,\ 0).
+\]
+Arrancamos \textbf{sin fabricar nada}: todas las horas sobran, así que la base inicial es $\{s_1, s_2, s_3\}$.
+Sus columnas en $A$ son justo la identidad.
+
+% ---------------------------------------------------------------------
+\subsection*{Iteración 0}
+\paso{1. Cuánto vale cada básica}
+\[
+\Binv = I, \qquad x_B = \Binv b = \begin{bmatrix} 4\\ 12\\ 18\end{bmatrix}
+\nota{no fabricamos nada: todas las horas están libres}
+\]
+\[
+c_B = (0,\ 0,\ 0) \nota{las holguras no dan ganancia}, \qquad Z = 0.
+\]
+
+\paso{2. Precios duales}
+\[ \pi = c_B\,\Binv = (0,\ 0,\ 0). \]
+
+\paso{3. ¿Alguien mejora $Z$?}
+Las no básicas son $x_1$ y $x_2$. Como $\pi$ es todo cero, $\pi\,a_j = 0$:
+\begin{align*}
+z_1 - c_1 &= 0 - 3 = -3\\
+z_2 - c_2 &= 0 - 5 = \mathbf{-5} \nota{el más negativo}
+\end{align*}
+\entra{Entra $x_2$}: cada lote de ventanas deja 5, más que las puertas, así que es lo que más sube la ganancia.
+
+\paso{4. ¿Quién sale?}
+\[
+\alpha = \Binv a_2 = \begin{bmatrix} 0\\ 2\\ 2\end{bmatrix}
+\nota{horas que gasta cada lote de ventanas en las plantas 1, 2 y 3}
+\]
+\begin{align*}
+s_1 &:\ \alpha = 0 \ \text{no cuenta} \nota{la ventana no usa la planta 1}\\
+s_2 &:\ 12 / 2 = \mathbf{6} \nota{la planta 2 alcanza para 6 lotes}\\
+s_3 &:\ 18 / 2 = 9 \nota{la planta 3 alcanza para 9 lotes}
+\end{align*}
+La menor es 6, así que \sale{sale $s_2$}: la planta 2 es la primera que se queda sin horas.
+
+\paso{5. Actualizo $\Binv$}
+Sale la fila 2 y $\alpha_2 = 2$, entonces
+$\eta = \left(-\tfrac{0}{2},\ \tfrac{1}{2},\ -\tfrac{2}{2}\right) = \left(0,\ \tfrac12,\ -1\right)$:
+\[
+E = \begin{bmatrix} 1 & 0 & 0\\ 0 & \frac12 & 0\\ 0 & -1 & 1\end{bmatrix},
+\qquad
+\Binv_{\text{nueva}} = E \cdot I = \begin{bmatrix} 1 & 0 & 0\\ 0 & \frac12 & 0\\ 0 & -1 & 1\end{bmatrix}.
+\]
+
+% ---------------------------------------------------------------------
+\subsection*{Iteración 1 \quad (base $\{s_1, x_2, s_3\}$)}
+\paso{1. Cuánto vale cada básica}
+\begin{align*}
+s_1 &= 1\cdot 4 = 4 \nota{la planta 1 sigue libre}\\
+x_2 &= \tfrac12 \cdot 12 = 6 \nota{ya hacemos 6 lotes de ventanas}\\
+s_3 &= -1\cdot 12 + 1\cdot 18 = 6 \nota{a la planta 3 le sobran 6 horas}
+\end{align*}
+Con $c_B = (0,\ 5,\ 0)$: \quad $Z = 5\cdot 6 = 30$.
+
+\paso{2. Precios duales}
+\[
+\pi = c_B\,\Binv = \left(0,\ 5\cdot\tfrac12,\ 0\right) = \left(0,\ \tfrac52,\ 0\right)
+\nota{por ahora, una hora más en la planta 2 valdría 2.5 mil}
+\]
+
+\paso{3. ¿Alguien mejora $Z$?}
+Las no básicas ahora son $x_1$ y $s_2$:
+\begin{align*}
+z_1 - c_1 &= \pi\cdot(1,\,0,\,3) - 3 = 0 + 0 + 0 - 3 = \mathbf{-3}\\
+z_{s_2} - c_{s_2} &= \pi\cdot(0,\,1,\,0) - 0 = \tfrac52 \nota{positivo: no conviene}
+\end{align*}
+\entra{Entra $x_1$}: fabricar puertas todavía sube la ganancia.
+
+\paso{4. ¿Quién sale?}
+\[
+\alpha = \Binv a_1 = \begin{bmatrix} 1 & 0 & 0\\ 0 & \frac12 & 0\\ 0 & -1 & 1\end{bmatrix}
+\begin{bmatrix} 1\\ 0\\ 3\end{bmatrix} = \begin{bmatrix} 1\\ 0\\ 3\end{bmatrix}
+\]
+\begin{align*}
+s_1 &:\ 4/1 = 4\\
+x_2 &:\ \alpha = 0 \ \text{no cuenta}\\
+s_3 &:\ 6/3 = \mathbf{2} \nota{con 2 lotes de puertas se acaban las 6 h libres}
+\end{align*}
+\sale{Sale $s_3$}: la planta 3 se llena.
+
+\paso{5. Actualizo $\Binv$}
+Sale la fila 3 con $\alpha_3 = 3$: \ $\eta = \left(-\tfrac13,\ 0,\ \tfrac13\right)$.
+\[
+E = \begin{bmatrix} 1 & 0 & -\frac13\\ 0 & 1 & 0\\ 0 & 0 & \frac13\end{bmatrix},
+\qquad
+\Binv_{\text{nueva}} = E\,\Binv = \begin{bmatrix} 1 & \frac13 & -\frac13\\ 0 & \frac12 & 0\\ 0 & -\frac13 & \frac13\end{bmatrix}.
+\]
+Por filas: la fila 3 $(0,-1,1)$ se divide entre 3 y queda $(0,-\tfrac13,\tfrac13)$; a la fila 1 le resto
+1 vez esa fila y queda $(1,\tfrac13,-\tfrac13)$; la fila 2 tiene $\alpha=0$, así que no cambia.
+
+% ---------------------------------------------------------------------
+\subsection*{Iteración 2 \quad (base $\{s_1, x_2, x_1\}$)}
+\paso{1. Cuánto vale cada básica}
+\begin{align*}
+s_1 &= 4 + \tfrac13(12) - \tfrac13(18) = 4 + 4 - 6 = 2\\
+x_2 &= \tfrac12(12) = 6\\
+x_1 &= -\tfrac13(12) + \tfrac13(18) = -4 + 6 = 2
+\end{align*}
+Con $c_B = (0,\ 5,\ 3)$: \quad $Z = 0\cdot 2 + 5\cdot 6 + 3\cdot 2 = 36$.
+
+\paso{2. Precios duales}
+\begin{align*}
+\pi_1 &= 0\cdot 1 + 5\cdot 0 + 3\cdot 0 = 0\\
+\pi_2 &= 0\cdot\tfrac13 + 5\cdot\tfrac12 + 3\cdot\left(-\tfrac13\right) = \tfrac52 - 1 = \tfrac32\\
+\pi_3 &= 0\cdot\left(-\tfrac13\right) + 5\cdot 0 + 3\cdot\tfrac13 = 1
+\end{align*}
+
+\paso{3. ¿Alguien mejora $Z$?}
+Las no básicas son $s_2$ y $s_3$ (sus columnas son $e_2$ y $e_3$, así que $\pi\,a_j$ es simplemente $\pi_2$ y $\pi_3$):
+\[
+z_{s_2} - 0 = \tfrac32 \ge 0, \qquad z_{s_3} - 0 = 1 \ge 0.
+\]
+\textbf{Ninguno es negativo $\Rightarrow$ llegamos al óptimo.}
+
+\subsection*{Resultado}
+\[
+\res{x_1 = 2,\quad x_2 = 6,\quad Z^* = 36}
+\]
+\begin{itemize}[itemsep=2pt]
+  \item Conviene fabricar \textbf{2 lotes de puertas y 6 lotes de ventanas} por semana, ganando \textbf{\$36\,000}.
+  \item $s_1 = 2$: a la planta 1 le sobran 2 horas. Las plantas 2 y 3 quedan al tope ($s_2 = s_3 = 0$).
+  \item \textbf{Precios sombra} $\pi = (0,\ \tfrac32,\ 1)$: una hora extra en la planta 1 no sirve de nada
+        (ya sobran horas); en la planta 2 valdría \$1\,500 y en la planta 3, \$1\,000.
+\end{itemize}
+
+\textbf{Comprobación:} $2 \le 4$ \checkmark, \ $2(6) = 12 \le 12$ \checkmark, \ $3(2) + 2(6) = 18 \le 18$ \checkmark.
+
+\subsection*{Interpretación gráfica}
+\begin{center}
+\begin{tikzpicture}[scale=0.6, >=Stealth]
+  \fill[region!70] (0,0)--(4,0)--(4,3)--(2,6)--(0,6)--cycle;
+  \draw[very thin, gray!25] (0,0) grid (9,10);
+  \draw[->] (0,0)--(9.5,0) node[right] {$x_1$};
+  \draw[->] (0,0)--(0,10.5) node[above] {$x_2$};
+  \foreach \x in {2,4,6,8} \node[below, font=\scriptsize] at (\x,0) {\x};
+  \foreach \y in {2,4,6,8,10} \node[left, font=\scriptsize] at (0,\y) {\y};
+  \draw[r1] (4,0)--(4,10);
+  \draw[r2] (0,6)--(9,6);
+  \draw[r3] (0,9)--(6,0);
+  \draw[zline] (0,7.2)--(9,1.8);
+  \draw[->, ultra thick, tinta!80] (0,0)--(0,5.8);
+  \draw[->, ultra thick, tinta!80] (0,6)--(1.8,6);
+  \foreach \p in {(0,0),(4,0),(4,3),(0,6)} \fill[tinta] \p circle (3pt);
+  \fill[resalta!90!black] (2,6) circle (6pt);
+  \node[anchor=south west, fill=white, inner sep=1pt, font=\scriptsize\bfseries, xshift=3pt, yshift=3pt] at (0,0) {It.~0};
+  \node[anchor=south west, fill=white, inner sep=1pt, font=\scriptsize\bfseries, xshift=3pt, yshift=3pt] at (0,6) {It.~1};
+  \node[anchor=south west, fill=white, inner sep=1pt, font=\small\bfseries, xshift=5pt, yshift=5pt] at (2,6) {It.~2: $(2,\,6)$ óptimo};
+  \node[anchor=north east, draw=gray!50, fill=white, align=left, font=\scriptsize, inner sep=4pt] at (9,9.9) {
+    \swatch{r1} R1: $x_1 \le 4$\\
+    \swatch{r2} R2: $2x_2 \le 12$\\
+    \swatch{r3} R3: $3x_1 + 2x_2 \le 18$\\
+    \swatch{zline} $Z = 36$};
+\end{tikzpicture}
+\end{center}
+El simplex arrancó en $(0,0)$, subió a $(0,6)$ al meter ventanas y terminó en $(2,6)$ al meter puertas.
+Si evaluamos $Z$ en todas las esquinas: $(0,0)\to 0$, \ $(4,0)\to 12$, \ $(4,3)\to 27$, \ $(0,6)\to 30$, \
+$(2,6)\to \mathbf{36}$. Coincide.
+
+% =====================================================================
+\newpage
+\section{Reddy Mikks: pinturas}
+\textit{Fuente: Taha, Investigación de Operaciones, cap.~2.}
+
+\subsection*{Planteamiento del problema}
+Reddy Mikks fabrica \textbf{pintura para exteriores} y \textbf{pintura para interiores} con dos materias primas,
+M1 y M2:
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+ & \textbf{Exteriores} (por ton) & \textbf{Interiores} (por ton) & \textbf{Disponible por día} \\
+\midrule
+Materia prima M1 & 6 ton & 4 ton & 24 ton \\
+Materia prima M2 & 1 ton & 2 ton & 6 ton \\
+\midrule
+Ganancia por tonelada & \$5\,000 & \$4\,000 & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Además, el estudio de mercado dice dos cosas:
+\begin{itemize}[itemsep=2pt]
+  \item La producción diaria de pintura de interiores \textbf{no puede superar} a la de exteriores en más de 1 tonelada.
+  \item La demanda máxima de pintura de interiores es de \textbf{2 toneladas por día}.
+\end{itemize}
+
+\subsection*{Formulación del modelo}
+\begin{itemize}[itemsep=2pt]
+  \item $x_1$ = toneladas diarias de pintura de exteriores, \quad $x_2$ = toneladas diarias de interiores.
+  \item \textbf{Ganancia} (miles de dólares): $Z = 5x_1 + 4x_2$.
+  \item \textbf{M1:} 6 ton por cada ton de exteriores y 4 por cada ton de interiores, con 24 disponibles
+        $\Rightarrow 6x_1 + 4x_2 \le 24$.
+  \item \textbf{M2:} $x_1 + 2x_2 \le 6$.
+  \item \textbf{Mercado 1:} ``interiores no supera a exteriores en más de 1'' se escribe $x_2 \le x_1 + 1$.
+        Paso $x_1$ al lado izquierdo y queda $-x_1 + x_2 \le 1$.
+  \item \textbf{Mercado 2:} $x_2 \le 2$.
+\end{itemize}
+
+\[
+\begin{aligned}
+\text{Max } Z &= 5x_1 + 4x_2\\
+\text{s.a. } \quad 6x_1 + 4x_2 &\le 24\\
+x_1 + 2x_2 &\le 6\\
+-x_1 + x_2 &\le 1\\
+x_2 &\le 2\\
+x_1, x_2 &\ge 0
+\end{aligned}
+\]
+
+\subsection*{Forma estándar}
+\begin{align*}
+6x_1 + 4x_2 + s_1 &= 24 \nota{$s_1$ = toneladas de M1 que sobran}\\
+x_1 + 2x_2 + s_2 &= 6 \nota{$s_2$ = toneladas de M2 que sobran}\\
+-x_1 + x_2 + s_3 &= 1 \nota{$s_3$ = ``margen'' que queda en el mercado 1}\\
+x_2 + s_4 &= 2 \nota{$s_4$ = demanda de interiores sin cubrir}
+\end{align*}
+\[
+b = (24,\ 6,\ 1,\ 2), \qquad c = (5,\ 4,\ 0,\ 0,\ 0,\ 0), \qquad \text{base inicial } \{s_1, s_2, s_3, s_4\},\ \Binv = I.
+\]
+
+% ---------------------------------------------------------------------
+\subsection*{Iteración 0}
+\paso{1 y 2. Valores y precios duales}
+\[
+x_B = (24,\ 6,\ 1,\ 2) \nota{no producimos nada: todo sobra}, \qquad \pi = (0,0,0,0), \qquad Z = 0.
+\]
+
+\paso{3. ¿Alguien mejora $Z$?}
+\[
+z_1 - c_1 = 0 - 5 = \mathbf{-5}, \qquad z_2 - c_2 = 0 - 4 = -4.
+\]
+\entra{Entra $x_1$} (la pintura de exteriores deja más ganancia).
+
+\paso{4. ¿Quién sale?}
+\[
+\alpha = \Binv a_1 = (6,\ 1,\ -1,\ 0)
+\]
+\begin{align*}
+s_1 &:\ 24/6 = \mathbf{4} \nota{M1 alcanza para 4 ton de exteriores}\\
+s_2 &:\ 6/1 = 6\\
+s_3 &:\ \alpha = -1 \ \text{no cuenta} \nota{producir más exteriores \emph{afloja} esta restricción}\\
+s_4 &:\ \alpha = 0 \ \text{no cuenta}
+\end{align*}
+\sale{Sale $s_1$}: la materia prima M1 es la que se acaba primero.
+
+\paso{5. Actualizo $\Binv$}
+Sale la fila 1 con $\alpha_1 = 6$: \
+$\eta = \left(\tfrac16,\ -\tfrac16,\ -\tfrac{-1}{6},\ -\tfrac06\right) = \left(\tfrac16,\ -\tfrac16,\ \tfrac16,\ 0\right)$.
+\[
+\Binv_{\text{nueva}} = E = \begin{bmatrix}
+\frac16 & 0 & 0 & 0\\ -\frac16 & 1 & 0 & 0\\ \frac16 & 0 & 1 & 0\\ 0 & 0 & 0 & 1
+\end{bmatrix}
+\]
+
+% ---------------------------------------------------------------------
+\subsection*{Iteración 1 \quad (base $\{x_1, s_2, s_3, s_4\}$)}
+\paso{1. Cuánto vale cada básica}
+\begin{align*}
+x_1 &= \tfrac16(24) = 4\\
+s_2 &= -\tfrac16(24) + 6 = -4 + 6 = 2 \nota{sobran 2 ton de M2}\\
+s_3 &= \tfrac16(24) + 1 = 5\\
+s_4 &= 2
+\end{align*}
+Con $c_B = (5,0,0,0)$: \quad $Z = 5\cdot 4 = 20$.
+
+\paso{2. Precios duales}
+\[
+\pi = c_B\,\Binv = \left(5\cdot\tfrac16,\ 0,\ 0,\ 0\right) = \left(\tfrac56,\ 0,\ 0,\ 0\right).
+\]
+
+\paso{3. ¿Alguien mejora $Z$?}
+La columna de $x_2$ es $a_2 = (4,\ 2,\ 1,\ 1)$:
+\begin{align*}
+z_2 - c_2 &= \tfrac56(4) + 0(2) + 0(1) + 0(1) - 4 = \tfrac{10}{3} - 4 = \mathbf{-\tfrac23}\\
+z_{s_1} - c_{s_1} &= \pi_1 - 0 = \tfrac56 \nota{positivo: no conviene devolver M1}
+\end{align*}
+\entra{Entra $x_2$}: todavía conviene producir pintura de interiores.
+
+\paso{4. ¿Quién sale?}
+\[
+\alpha = \Binv a_2 =
+\begin{bmatrix} \frac16(4)\\[2pt] -\frac16(4) + 2\\[2pt] \frac16(4) + 1\\[2pt] 1 \end{bmatrix}
+= \begin{bmatrix} \frac23\\[2pt] \frac43\\[2pt] \frac53\\[2pt] 1 \end{bmatrix}
+\]
+\begin{align*}
+x_1 &:\ 4 \div \tfrac23 = 6\\
+s_2 &:\ 2 \div \tfrac43 = \mathbf{\tfrac32} \nota{la más chica}\\
+s_3 &:\ 5 \div \tfrac53 = 3\\
+s_4 &:\ 2 \div 1 = 2
+\end{align*}
+\sale{Sale $s_2$}: ahora es la materia prima M2 la que se agota.
+
+\paso{5. Actualizo $\Binv$}
+Sale la fila 2 con $\alpha_2 = \tfrac43$:
+\[
+\eta = \left(-\frac{2/3}{4/3},\ \frac{1}{4/3},\ -\frac{5/3}{4/3},\ -\frac{1}{4/3}\right)
+= \left(-\tfrac12,\ \tfrac34,\ -\tfrac54,\ -\tfrac34\right)
+\]
+\[
+E = \begin{bmatrix} 1 & -\frac12 & 0 & 0\\ 0 & \frac34 & 0 & 0\\ 0 & -\frac54 & 1 & 0\\ 0 & -\frac34 & 0 & 1\end{bmatrix},
+\qquad
+\Binv_{\text{nueva}} = E\,\Binv = \begin{bmatrix}
+\frac14 & -\frac12 & 0 & 0\\ -\frac18 & \frac34 & 0 & 0\\ \frac38 & -\frac54 & 1 & 0\\ \frac18 & -\frac34 & 0 & 1
+\end{bmatrix}.
+\]
+Por filas: la fila 2 $(-\tfrac16, 1, 0, 0)$ entre $\tfrac43$ da $(-\tfrac18, \tfrac34, 0, 0)$. A la fila 1 le resto
+$\tfrac23$ de esa fila: $(\tfrac16, 0) - \tfrac23(-\tfrac18, \tfrac34) = (\tfrac14, -\tfrac12)$. Igual con las filas 3 y 4.
+
+% ---------------------------------------------------------------------
+\subsection*{Iteración 2 \quad (base $\{x_1, x_2, s_3, s_4\}$)}
+\paso{1. Cuánto vale cada básica}
+\begin{align*}
+x_1 &= \tfrac14(24) - \tfrac12(6) = 6 - 3 = 3\\
+x_2 &= -\tfrac18(24) + \tfrac34(6) = -3 + \tfrac92 = \tfrac32\\
+s_3 &= \tfrac38(24) - \tfrac54(6) + 1 = 9 - \tfrac{15}{2} + 1 = \tfrac52\\
+s_4 &= \tfrac18(24) - \tfrac34(6) + 2 = 3 - \tfrac92 + 2 = \tfrac12
+\end{align*}
+Con $c_B = (5,4,0,0)$: \quad $Z = 5(3) + 4\left(\tfrac32\right) = 15 + 6 = 21$.
+
+\paso{2. Precios duales}
+\begin{align*}
+\pi_1 &= 5\cdot\tfrac14 + 4\cdot\left(-\tfrac18\right) = \tfrac54 - \tfrac12 = \tfrac34\\
+\pi_2 &= 5\cdot\left(-\tfrac12\right) + 4\cdot\tfrac34 = -\tfrac52 + 3 = \tfrac12\\
+\pi_3 &= 0, \qquad \pi_4 = 0
+\end{align*}
+
+\paso{3. ¿Alguien mejora $Z$?}
+Las no básicas son $s_1$ y $s_2$:
+\[
+z_{s_1} - 0 = \pi_1 = \tfrac34 \ge 0, \qquad z_{s_2} - 0 = \pi_2 = \tfrac12 \ge 0.
+\]
+\textbf{Ninguno es negativo $\Rightarrow$ óptimo.}
+
+\subsection*{Resultado}
+\[
+\res{x_1 = 3,\quad x_2 = \tfrac32,\quad Z^* = 21}
+\]
+\begin{itemize}[itemsep=2pt]
+  \item Conviene producir \textbf{3 toneladas de exteriores y 1.5 de interiores} al día, ganando \textbf{\$21\,000}.
+  \item M1 y M2 se usan completas ($s_1 = s_2 = 0$).
+  \item $s_3 = \tfrac52$: la condición del mercado sobra mucho (interiores está 1.5 ton \emph{por debajo} de exteriores).
+  \item $s_4 = \tfrac12$: se venden 1.5 ton de interiores, media tonelada menos que la demanda máxima.
+  \item \textbf{Precios sombra} $(\tfrac34,\ \tfrac12,\ 0,\ 0)$: una tonelada extra de M1 subiría la ganancia en \$750,
+        una de M2 en \$500. Las condiciones de mercado no están frenando nada (valen 0).
+\end{itemize}
+
+\subsection*{Interpretación gráfica}
+\begin{center}
+\begin{tikzpicture}[scale=1.05, >=Stealth]
+  \fill[region!70] (0,0)--(4,0)--(3,1.5)--(2,2)--(1,2)--(0,1)--cycle;
+  \draw[very thin, gray!25] (0,0) grid (6.5,4.5);
+  \draw[->] (0,0)--(6.8,0) node[right] {$x_1$};
+  \draw[->] (0,0)--(0,4.8) node[above] {$x_2$};
+  \foreach \x in {1,...,6} \node[below, font=\scriptsize] at (\x,0) {\x};
+  \foreach \y in {1,...,4} \node[left, font=\scriptsize] at (0,\y) {\y};
+  \draw[r1] (1,4.5)--(4,0);
+  \draw[r2] (0,3)--(6,0);
+  \draw[r3] (0,1)--(3.5,4.5);
+  \draw[r4] (0,2)--(6.5,2);
+  \draw[zline] (0.6,4.5)--(4.2,0);
+  \node[anchor=north east, draw=gray!50, fill=white, align=left, font=\scriptsize, inner sep=4pt] at (6.5,4.45) {
+    \swatch{r1} R1: $6x_1 + 4x_2 \le 24$\\
+    \swatch{r2} R2: $x_1 + 2x_2 \le 6$\\
+    \swatch{r3} R3: $-x_1 + x_2 \le 1$\\
+    \swatch{r4} R4: $x_2 \le 2$\\
+    \swatch{zline} $Z = 21$};
+  \draw[->, ultra thick, tinta!80] (0,0)--(3.85,0);
+  \draw[->, ultra thick, tinta!80] (4,0)--(3.1,1.38);
+  \foreach \p in {(0,0),(4,0),(2,2),(1,2),(0,1)} \fill[tinta] \p circle (2pt);
+  \fill[resalta!90!black] (3,1.5) circle (3.5pt);
+  \node[anchor=south west, fill=white, inner sep=1pt, font=\scriptsize\bfseries, xshift=3pt, yshift=3pt] at (0,0) {It.~0};
+  \node[anchor=south west, fill=white, inner sep=1pt, font=\scriptsize\bfseries, xshift=3pt, yshift=3pt] at (4,0) {It.~1};
+  \node[anchor=south west, fill=white, inner sep=1pt, font=\small\bfseries, xshift=5pt, yshift=5pt] at (3,1.5) {It.~2: $(3,\,1.5)$ óptimo};
+\end{tikzpicture}
+\end{center}
+El simplex salió de $(0,0)$, avanzó por el eje hasta $(4,0)$ (se acabó M1) y subió a $(3,\,1.5)$ (se acabó M2).
+Esquinas: $(0,0)\to 0$, \ $(4,0)\to 20$, \ $(3,1.5)\to \mathbf{21}$, \ $(2,2)\to 18$, \ $(1,2)\to 13$, \ $(0,1)\to 4$.
+
+% =====================================================================
+\newpage
+\section{Terapia de radiación: minimizar con Gran M}
+\textit{Fuente: Hillier y Lieberman, Introducción a la Investigación de Operaciones, cap.~3.}
+
+\subsection*{Planteamiento del problema}
+A una paciente con un tumor se le va a aplicar radiación con \textbf{dos haces}. Cada haz reparte su dosis entre
+distintas zonas del cuerpo. Por cada kilorad que se dispara con cada haz, cada zona absorbe:
+
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Zona} & \textbf{Haz 1} & \textbf{Haz 2} & \textbf{Condición para esa zona} \\
+\midrule
+Tejido sano         & 0.4 & 0.5 & lo \textbf{mínimo} posible \\
+Tejidos críticos    & 0.3 & 0.1 & como mucho 2.7 \\
+Región del tumor    & 0.5 & 0.5 & exactamente 6 \\
+Centro del tumor    & 0.6 & 0.4 & al menos 6 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La pregunta: \textbf{¿qué dosis dar con cada haz para dañar lo menos posible el tejido sano?}
+
+\subsection*{Formulación del modelo}
+\begin{itemize}[itemsep=2pt]
+  \item $x_1$ = dosis del haz 1 (kilorads), \quad $x_2$ = dosis del haz 2.
+  \item \textbf{Objetivo:} lo que absorbe el tejido sano, $Z = 0.4x_1 + 0.5x_2$, y queremos que sea \textbf{mínimo}.
+  \item \textbf{Tejidos críticos:} $0.3x_1 + 0.1x_2 \le 2.7$ \ (``como mucho'' $\to \le$).
+  \item \textbf{Región del tumor:} $0.5x_1 + 0.5x_2 = 6$ \ (``exactamente'' $\to =$).
+  \item \textbf{Centro del tumor:} $0.6x_1 + 0.4x_2 \ge 6$ \ (``al menos'' $\to \ge$).
+\end{itemize}
+
+\[
+\begin{aligned}
+\text{Min } Z &= 0.4x_1 + 0.5x_2\\
+\text{s.a. } \quad 0.3x_1 + 0.1x_2 &\le 2.7\\
+0.5x_1 + 0.5x_2 &= 6\\
+0.6x_1 + 0.4x_2 &\ge 6\\
+x_1, x_2 &\ge 0
+\end{aligned}
+\]
+Para trabajar exacto uso fracciones: $0.4 = \tfrac25$, $0.5 = \tfrac12$, $0.3 = \tfrac{3}{10}$, $0.1 = \tfrac1{10}$,
+$0.6 = \tfrac35$, $2.7 = \tfrac{27}{10}$.
+
+\subsection*{Forma estándar}
+\begin{enumerate}[itemsep=3pt]
+  \item \textbf{Min a Max:} minimizar $Z$ es lo mismo que maximizar $-Z$. Así que trabajo con
+        $\text{Max } (-Z) = -\tfrac25 x_1 - \tfrac12 x_2$ y al final le cambio el signo.
+  \item \textbf{Restricción $\le$:} le sumo la holgura $s_1$, igual que antes.
+  \item \textbf{Restricción $=$:} ya es igualdad, pero \textbf{no tiene ninguna variable que pueda arrancar en la base}.
+        Le invento una \textbf{artificial} $a_2$.
+  \item \textbf{Restricción $\ge$:} le resto un \textbf{exceso} $e_3$ (lo que me paso de 6). Pero $e_3$ tiene coeficiente $-1$
+        y no sirve para la base inicial (valdría $-6$), así que también le sumo una artificial $a_3$.
+\end{enumerate}
+\begin{align*}
+\tfrac{3}{10}x_1 + \tfrac1{10}x_2 + s_1 &= \tfrac{27}{10}\\
+\tfrac12 x_1 + \tfrac12 x_2 + a_2 &= 6\\
+\tfrac35 x_1 + \tfrac25 x_2 - e_3 + a_3 &= 6
+\end{align*}
+
+\begin{idea}[Método de la Gran M]
+Las variables artificiales no forman parte del problema real: solo existen para tener una base al inicio. En la solución final
+\textbf{tienen que valer 0}. Para obligar al método a sacarlas, las castigo en la función objetivo con $-M$,
+donde $M$ es un número gigantesco:
+\[
+\text{Max } (-Z) = -\tfrac25 x_1 - \tfrac12 x_2 + 0s_1 - M a_2 + 0e_3 - M a_3.
+\]
+Regla para comparar: \textbf{manda el término con $M$}. Solo si dos cosas tienen la misma cantidad de $M$,
+se desempata con el número suelto.
+\end{idea}
+
+Orden de columnas $(x_1, x_2, s_1, a_2, e_3, a_3)$, con $b = \left(\tfrac{27}{10},\ 6,\ 6\right)$ y
+$c = \left(-\tfrac25,\ -\tfrac12,\ 0,\ -M,\ 0,\ -M\right)$. Base inicial $\{s_1, a_2, a_3\}$, $\Binv = I$.
+
+% ---------------------------------------------------------------------
+\subsection*{Iteración 0 \quad (base $\{s_1, a_2, a_3\}$)}
+\paso{1 y 2. Valores y precios duales}
+\[
+x_B = \left(\tfrac{27}{10},\ 6,\ 6\right), \qquad c_B = (0,\ -M,\ -M), \qquad \pi = c_B\,I = (0,\ -M,\ -M)
+\]
+\[
+(-Z) = 0\cdot\tfrac{27}{10} - 6M - 6M = -12M \nota{muy malo: las artificiales valen 6 cada una}
+\]
+
+\paso{3. ¿Alguien mejora?}
+Las no básicas son $x_1$, $x_2$ y $e_3$:
+\begin{align*}
+z_1 - c_1 &= \left[0\cdot\tfrac{3}{10} - M\cdot\tfrac12 - M\cdot\tfrac35\right] + \tfrac25 = \tfrac25 - \tfrac{11}{10}M \nota{el más negativo}\\
+z_2 - c_2 &= \left[-M\cdot\tfrac12 - M\cdot\tfrac25\right] + \tfrac12 = \tfrac12 - \tfrac{9}{10}M\\
+z_{e_3} - c_{e_3} &= -M\cdot(-1) - 0 = M
+\end{align*}
+Comparo solo la $M$: $-\tfrac{11}{10}M$ es más negativo que $-\tfrac{9}{10}M$. \entra{Entra $x_1$}.
+
+\paso{4. ¿Quién sale?}
+\[
+\alpha = a_1 = \left(\tfrac{3}{10},\ \tfrac12,\ \tfrac35\right)
+\]
+\begin{align*}
+s_1 &:\ \tfrac{27}{10} \div \tfrac{3}{10} = \mathbf{9}\\
+a_2 &:\ 6 \div \tfrac12 = 12\\
+a_3 &:\ 6 \div \tfrac35 = 10
+\end{align*}
+\sale{Sale $s_1$}: los tejidos críticos llegan a su límite con $x_1 = 9$.
+
+\paso{5. Actualizo $\Binv$}
+Sale la fila 1 con $\alpha_1 = \tfrac{3}{10}$:
+$\eta = \left(\tfrac{10}{3},\ -\tfrac{1/2}{3/10},\ -\tfrac{3/5}{3/10}\right) = \left(\tfrac{10}3,\ -\tfrac53,\ -2\right)$.
+\[
+\Binv_{\text{nueva}} = E = \begin{bmatrix} \frac{10}{3} & 0 & 0\\ -\frac53 & 1 & 0\\ -2 & 0 & 1\end{bmatrix}
+\]
+
+% ---------------------------------------------------------------------
+\subsection*{Iteración 1 \quad (base $\{x_1, a_2, a_3\}$)}
+\paso{1. Valores}
+\begin{align*}
+x_1 &= \tfrac{10}{3}\cdot\tfrac{27}{10} = 9\\
+a_2 &= -\tfrac53\cdot\tfrac{27}{10} + 6 = -\tfrac92 + 6 = \tfrac32 \nota{la artificial bajó de 6 a 1.5}\\
+a_3 &= -2\cdot\tfrac{27}{10} + 6 = -\tfrac{27}{5} + 6 = \tfrac35
+\end{align*}
+$(-Z) = -\tfrac25(9) - M\cdot\tfrac32 - M\cdot\tfrac35 = -\tfrac{18}{5} - \tfrac{21}{10}M$ \quad (mejoró: antes era $-12M$).
+
+\paso{2. Precios duales} \ con $c_B = \left(-\tfrac25,\ -M,\ -M\right)$:
+\begin{align*}
+\pi_1 &= -\tfrac25\cdot\tfrac{10}{3} - M\cdot\left(-\tfrac53\right) - M\cdot(-2) = -\tfrac43 + \tfrac{11}{3}M\\
+\pi_2 &= -M, \qquad \pi_3 = -M
+\end{align*}
+
+\paso{3. ¿Alguien mejora?}
+\begin{align*}
+z_2 - c_2 &= \pi_1\cdot\tfrac1{10} + \pi_2\cdot\tfrac12 + \pi_3\cdot\tfrac25 + \tfrac12 = \tfrac{11}{30} - \tfrac{8}{15}M \nota{negativo}\\
+z_{s_1} - c_{s_1} &= \pi_1 = -\tfrac43 + \tfrac{11}{3}M \nota{la $M$ positiva manda: positivo}\\
+z_{e_3} - c_{e_3} &= -\pi_3 = M
+\end{align*}
+\entra{Entra $x_2$}.
+
+\paso{4. ¿Quién sale?}
+\[
+\alpha = \Binv a_2 = \begin{bmatrix} \frac{10}{3}\cdot\frac1{10}\\[2pt] -\frac53\cdot\frac1{10} + \frac12\\[2pt] -2\cdot\frac1{10} + \frac25\end{bmatrix}
+= \begin{bmatrix} \frac13\\[2pt] \frac13\\[2pt] \frac15\end{bmatrix}
+\]
+\begin{align*}
+x_1 &:\ 9 \div \tfrac13 = 27\\
+a_2 &:\ \tfrac32 \div \tfrac13 = \tfrac92\\
+a_3 &:\ \tfrac35 \div \tfrac15 = \mathbf{3} \nota{la más chica}
+\end{align*}
+\sale{Sale $a_3$}: ¡ya se fue la primera artificial!
+
+\paso{5. Actualizo $\Binv$}
+Sale la fila 3 con $\alpha_3 = \tfrac15$: \ $\eta = \left(-\tfrac53,\ -\tfrac53,\ 5\right)$.
+\[
+E = \begin{bmatrix} 1 & 0 & -\frac53\\ 0 & 1 & -\frac53\\ 0 & 0 & 5\end{bmatrix},
+\qquad
+\Binv_{\text{nueva}} = \begin{bmatrix} \frac{20}{3} & 0 & -\frac53\\ \frac53 & 1 & -\frac53\\ -10 & 0 & 5\end{bmatrix}
+\]
+Por filas: la fila 3 $(-2, 0, 1)$ por 5 da $(-10, 0, 5)$. A la fila 1 le resto $\tfrac13$ de eso:
+$(\tfrac{10}3, 0, 0) - \tfrac13(-10, 0, 5) = (\tfrac{20}{3}, 0, -\tfrac53)$. Lo mismo con la fila 2.
+
+% ---------------------------------------------------------------------
+\subsection*{Iteración 2 \quad (base $\{x_1, a_2, x_2\}$)}
+\paso{1. Valores}
+\begin{align*}
+x_1 &= \tfrac{20}{3}\cdot\tfrac{27}{10} - \tfrac53\cdot 6 = 18 - 10 = 8\\
+a_2 &= \tfrac53\cdot\tfrac{27}{10} + 6 - \tfrac53\cdot 6 = \tfrac92 + 6 - 10 = \tfrac12\\
+x_2 &= -10\cdot\tfrac{27}{10} + 5\cdot 6 = -27 + 30 = 3
+\end{align*}
+$(-Z) = -\tfrac25(8) - \tfrac12 M - \tfrac12(3) = -\tfrac{47}{10} - \tfrac12 M$.
+
+\paso{2. Precios duales} \ con $c_B = \left(-\tfrac25,\ -M,\ -\tfrac12\right)$:
+\begin{align*}
+\pi_1 &= -\tfrac25\cdot\tfrac{20}3 - M\cdot\tfrac53 - \tfrac12\cdot(-10) = \tfrac73 - \tfrac53 M\\
+\pi_2 &= -M\\
+\pi_3 &= -\tfrac25\cdot\left(-\tfrac53\right) - M\cdot\left(-\tfrac53\right) - \tfrac12\cdot 5 = -\tfrac{11}{6} + \tfrac53 M
+\end{align*}
+
+\paso{3. ¿Alguien mejora?}
+\begin{align*}
+z_{s_1} - c_{s_1} &= \pi_1 = \tfrac73 - \tfrac53 M \nota{negativo}\\
+z_{e_3} - c_{e_3} &= -\pi_3 = \tfrac{11}{6} - \tfrac53 M \nota{negativo}\\
+z_{a_3} - c_{a_3} &= \pi_3 + M = -\tfrac{11}6 + \tfrac83 M \nota{positivo}
+\end{align*}
+Aquí hay un \textbf{empate en la $M$}: los dos tienen $-\tfrac53 M$. Desempata el número suelto:
+$\tfrac{11}{6} < \tfrac73$, así que \entra{entra $e_3$}.
+
+\paso{4. ¿Quién sale?}
+La columna de $e_3$ es $(0,\ 0,\ -1)$, así que $\alpha$ es la columna 3 de $\Binv$ cambiada de signo:
+\[
+\alpha = \left(\tfrac53,\ \tfrac53,\ -5\right)
+\]
+\begin{align*}
+x_1 &:\ 8 \div \tfrac53 = \tfrac{24}{5}\\
+a_2 &:\ \tfrac12 \div \tfrac53 = \mathbf{\tfrac{3}{10}} \nota{la más chica}\\
+x_2 &:\ \alpha = -5 \ \text{no cuenta}
+\end{align*}
+\sale{Sale $a_2$}: ¡se va la última artificial! Desde aquí ya estamos dentro de la región factible.
+
+\paso{5. Actualizo $\Binv$}
+Sale la fila 2 con $\alpha_2 = \tfrac53$: \ $\eta = \left(-1,\ \tfrac35,\ 3\right)$.
+\[
+E = \begin{bmatrix} 1 & -1 & 0\\ 0 & \frac35 & 0\\ 0 & 3 & 1\end{bmatrix},
+\qquad
+\Binv_{\text{nueva}} = \begin{bmatrix} 5 & -1 & 0\\ 1 & \frac35 & -1\\ -5 & 3 & 0\end{bmatrix}
+\]
+
+% ---------------------------------------------------------------------
+\subsection*{Iteración 3 \quad (base $\{x_1, e_3, x_2\}$)}
+\paso{1. Valores}
+\begin{align*}
+x_1 &= 5\cdot\tfrac{27}{10} - 6 = \tfrac{27}{2} - 6 = \tfrac{15}{2}\\
+e_3 &= \tfrac{27}{10} + \tfrac35\cdot 6 - 6 = \tfrac{27}{10} + \tfrac{36}{10} - \tfrac{60}{10} = \tfrac{3}{10}\\
+x_2 &= -5\cdot\tfrac{27}{10} + 3\cdot 6 = -\tfrac{27}{2} + 18 = \tfrac92
+\end{align*}
+Con $c_B = \left(-\tfrac25,\ 0,\ -\tfrac12\right)$: \quad
+$(-Z) = -\tfrac25\cdot\tfrac{15}2 - \tfrac12\cdot\tfrac92 = -3 - \tfrac94 = -\tfrac{21}{4}$. \ ¡Ya no hay $M$!
+
+\paso{2. Precios duales}
+\begin{align*}
+\pi_1 &= -\tfrac25(5) + 0(1) - \tfrac12(-5) = -2 + \tfrac52 = \tfrac12\\
+\pi_2 &= -\tfrac25(-1) + 0\left(\tfrac35\right) - \tfrac12(3) = \tfrac25 - \tfrac32 = -\tfrac{11}{10}\\
+\pi_3 &= -\tfrac25(0) + 0(-1) - \tfrac12(0) = 0
+\end{align*}
+
+\paso{3. ¿Alguien mejora?}
+\begin{align*}
+z_{s_1} - c_{s_1} &= \pi_1 = \tfrac12 \ge 0\\
+z_{a_2} - c_{a_2} &= \pi_2 + M = -\tfrac{11}{10} + M \ge 0 \nota{$M$ gigante}\\
+z_{a_3} - c_{a_3} &= \pi_3 + M = M \ge 0
+\end{align*}
+\textbf{Ninguno es negativo $\Rightarrow$ óptimo.}
+
+\subsection*{Resultado}
+Como trabajamos con $\text{Max}(-Z) = -\tfrac{21}{4}$, el mínimo es $Z^* = \tfrac{21}{4}$:
+\[
+\res{x_1 = \tfrac{15}{2} = 7.5,\quad x_2 = \tfrac92 = 4.5,\quad Z^* = \tfrac{21}{4} = 5.25}
+\]
+\begin{itemize}[itemsep=2pt]
+  \item Hay que dar \textbf{7.5 kilorads con el haz 1 y 4.5 con el haz 2}. El tejido sano absorbe \textbf{5.25}, lo mínimo posible.
+  \item $s_1 = 0$: los tejidos críticos quedan justo en su límite: $0.3(7.5) + 0.1(4.5) = 2.7$.
+  \item $e_3 = \tfrac{3}{10}$: el centro del tumor recibe $0.6(7.5) + 0.4(4.5) = 6.3$, o sea 0.3 más del mínimo.
+  \item Las artificiales terminaron en 0, como debía ser: la solución sí es factible.
+  \item \textbf{Precios sombra} del problema original: $-\tfrac12$ para los tejidos críticos (si se permitiera 1 kilorad más ahí,
+        el daño al tejido sano \emph{bajaría} 0.5), $\tfrac{11}{10}$ para la región del tumor (si se exigiera 1 más,
+        el daño \emph{subiría} 1.1) y 0 para el centro del tumor (esa condición no está frenando nada).
+\end{itemize}
+
+\subsection*{Interpretación gráfica}
+\begin{center}
+\begin{tikzpicture}[scale=0.52, >=Stealth]
+  \draw[very thin, gray!25] (0,0) grid (14,16);
+  \draw[->] (0,0)--(14.6,0) node[right] {$x_1$};
+  \draw[->] (0,0)--(0,16.6) node[above] {$x_2$};
+  \foreach \x in {2,4,...,14} \node[below, font=\scriptsize] at (\x,0) {\x};
+  \foreach \y in {2,4,...,16} \node[left, font=\scriptsize] at (0,\y) {\y};
+  \draw[r1] (9,0)--(3.667,16);
+  \draw[r2] (0,12)--(12,0);
+  \draw[r3] (0,15)--(10,0);
+  \draw[zline] (0,10.5)--(13.125,0);
+  \node[anchor=north east, draw=gray!50, fill=white, align=left, font=\scriptsize, inner sep=4pt] at (14,15.8) {
+    \swatch{r1} R1: $0.3x_1 + 0.1x_2 \le 2.7$\\
+    \swatch{r2} R2: $0.5x_1 + 0.5x_2 = 6$\\
+    \swatch{r3} R3: $0.6x_1 + 0.4x_2 \ge 6$\\
+    \swatch{zline} $Z = 5.25$};
+  \draw[line width=4pt, region!90!black, line cap=round] (6,6)--(7.5,4.5);
+  \draw[->, ultra thick, tinta!80] (0,0)--(8.8,0);
+  \draw[->, ultra thick, tinta!80] (9,0)--(8.07,2.8);
+  \draw[->, ultra thick, tinta!80] (8,3)--(7.57,4.35);
+  \fill[tinta] (6,6) circle (3pt);
+  \foreach \p in {(0,0),(9,0),(8,3)} \draw[fill=white, draw=tinta] \p circle (5pt);
+  \fill[resalta!90!black] (7.5,4.5) circle (8pt);
+  \node[anchor=south west, fill=white, inner sep=1pt, font=\scriptsize\bfseries, xshift=3pt, yshift=3pt] at (0,0) {It.~0};
+  \node[anchor=south west, fill=white, inner sep=1pt, font=\scriptsize\bfseries, xshift=3pt, yshift=3pt] at (9,0) {It.~1};
+  \node[anchor=south west, fill=white, inner sep=1pt, font=\scriptsize\bfseries, xshift=3pt, yshift=3pt] at (8,3) {It.~2};
+  \node[anchor=south west, fill=white, inner sep=1pt, font=\small\bfseries, xshift=5pt, yshift=5pt] at (7.5,4.5) {It.~3: $(7.5,\,4.5)$ óptimo};
+\end{tikzpicture}
+\end{center}
+Como hay una igualdad, la región factible no es un área sino \textbf{el pedacito de recta} entre $(6,6)$ y $(7.5,\,4.5)$
+(la línea gruesa). Fíjate en los círculos blancos: con Gran M el simplex pasa por puntos que \textbf{no son factibles}
+($(0,0)$, $(9,0)$, $(8,3)$), porque las artificiales todavía valen algo. La $M$ lo va empujando hasta que entra a la región
+y termina en $(7.5,\,4.5)$. Evaluando los dos extremos: $(6,6)\to 5.4$ y $(7.5,4.5)\to \mathbf{5.25}$. Coincide.
+
+% =====================================================================
+\newpage
+\section*{Resumen de los tres ejercicios}
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Ejercicio} & \textbf{Tipo} & \textbf{Técnica} & \textbf{Iteraciones} & \textbf{Solución} & \textbf{Óptimo} \\
+\midrule
+Wyndor Glass & Max, todo $\le$ & holguras & 2 & $(2,\ 6)$ & $Z = 36$ \\
+Reddy Mikks & Max, todo $\le$ & holguras & 2 & $(3,\ 1.5)$ & $Z = 21$ \\
+Radiación & Min, $\le$ $=$ $\ge$ & Gran M & 3 & $(7.5,\ 4.5)$ & $Z = 5.25$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{idea}[Conclusiones]
+\begin{itemize}[itemsep=2pt, leftmargin=*]
+  \item En el Simplex Revisado todo se obtiene de $\Binv$: con ella se calculan $x_B$, $\pi$ y $\alpha$ sin actualizar la tabla completa.
+  \item \entra{Entra} la no básica con $z_j - c_j$ más negativo; \sale{sale} la básica con la menor razón $x_B/\alpha$ (solo $\alpha > 0$).
+  \item $\Binv$ se actualiza con $E$, que es hacer Gauss sobre la fila del pivote.
+  \item Cuando hay $=$ o $\ge$ aparecen artificiales; la Gran M las castiga para que salgan de la base.
+  \item Los $\pi$ del final son los \textbf{precios sombra}: cuánto cambia el óptimo si tuviera una unidad más de cada recurso.
+\end{itemize}
+\end{idea}
+
+\textbf{Verificación:} los tres ejercicios se comprobaron con la implementación del método (\emph{Simplex Arcade},
+modo 1P, Gran M), que reproduce las mismas iteraciones, y con la librería javascript-lp-solver, que confirma los tres óptimos.
+
+\section*{Referencias}
+\addcontentsline{toc}{part}{Referencias}
+\begin{itemize}[leftmargin=*, itemsep=3pt]
+  \item Bazaraa, M. S., Jarvis, J. J. y Sherali, H. D. \textit{Programación lineal y flujo en redes}. Limusa.
+  \item Dantzig, G. B. y Orchard-Hays, W. (1954). The product form for the inverse in the simplex method. \textit{Mathematical Tables and Other Aids to Computation}, 8(46).
+  \item Hillier, F. S. y Lieberman, G. J. \textit{Introducción a la Investigación de Operaciones}. McGraw-Hill.
+  \item Taha, H. A. \textit{Investigación de Operaciones}. Pearson.
+\end{itemize}
+
+\end{document}
