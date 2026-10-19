@@ -1,7 +1,7 @@
 // Prueba de la interfaz con clics reales en Firefox (opcional).
 // Requiere: npm i --no-save playwright@1.48.2 && npx playwright install firefox   Uso: node tests/ui.mjs
 import { firefox } from 'playwright';
-const URL = new URL('../index.html', import.meta.url).href;
+const PAGE = new URL('../index.html', import.meta.url).href;
 const browser = await firefox.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 const errors = [];
@@ -11,7 +11,7 @@ let fails = 0;
 const check = (cond, name) => { console.log(`${cond ? '✓' : '✗'} ${name}`); if (!cond) fails++; };
 const score = async () => (await page.locator('.score').first().textContent().catch(() => '')).replace(/\s+/g, ' ').trim();
 
-await page.goto(URL);
+await page.goto(PAGE);
 await page.click('#btn-solve');
 check((await score()).includes('36'), 'simplex por defecto (Wyndor) da 36');
 await page.click('[data-mode="dual"]');
@@ -84,7 +84,7 @@ check((await page.locator('[data-k="arc"]').count()) >= 6, 'LIMPIAR deja un form
 // Celular
 const m = await browser.newPage({ viewport: { width: 390, height: 900 } });
 m.on('pageerror', (e) => errors.push(`mobile pageerror: ${e.message}`));
-await m.goto(`${URL}#m14&run`);
+await m.goto(`${PAGE}#m14&run`);
 const overflow = await m.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 check(overflow <= 1, `sin scroll horizontal en celular (sobra ${overflow}px)`);
 
