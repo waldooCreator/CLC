@@ -50,11 +50,12 @@
 
     res.stages.forEach((st, idx) => {
       if (st.type === 'rows') {
+        const changed = st.mins.some((m) => !m.isZero());
         steps.push({
           id: 'a-rows', title: 'Paso 1 · Restar el menor de cada fila', lines: [
             hmatrix(res, st.before, { zeros: false, side: st.mins.map(ms), sideTitle: 'menor' }),
-            row('a cada número de la fila le resto el menor de su fila', 'así cada fila tiene al menos un 0'),
-            hmatrix(res, st.after),
+            row(changed ? 'a cada número de la fila le resto el menor de su fila' : 'todas las filas ya tienen un 0', changed ? 'así cada fila tiene al menos un 0' : 'no cambia nada'),
+            ...(changed ? [hmatrix(res, st.after)] : []),
           ],
         });
       } else if (st.type === 'cols') {

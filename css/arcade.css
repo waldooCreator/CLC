@@ -105,7 +105,9 @@ b { font-weight: normal; color: var(--ink); }
 .led.on { background: var(--win); box-shadow: 0 0 10px var(--win); }
 
 /* ---------- Selector de modo ---------- */
-.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modes { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.modes .mode:nth-child(-n + 2) { grid-column: span 3; }
+.modes .mode:nth-child(n + 3) { grid-column: span 2; }
 .mode {
   font-family: var(--pixel);
   font-size: 9px;
@@ -549,3 +551,60 @@ select.px-input { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Asignación y redes ---------- */
+.net-grid .cell { width: 3.9rem; padding-left: 6px; padding-right: 6px; }
+.net-grid .cell.name { width: 5.6rem; text-align: left; }
+.net-grid .cell.cap { width: 3.6rem; }
+.net-grid th .cell.name { font-family: var(--crt); font-size: 18px; text-align: center; color: var(--phos); }
+.net-del { min-width: 38px; height: 38px; }
+.vault-mode--assign { background: var(--coin); }
+.vault-mode--maxflow { background: var(--win); }
+.vault-mode--mincost { background: #ff9f43; }
+.var-sub { color: var(--mute) !important; font-family: var(--crt) !important; font-size: 16px !important; }
+
+.vault-groups { display: flex; flex-direction: column; gap: 10px; }
+.vault-group { border: 3px solid var(--line); background: var(--panel-2); }
+.vault-group > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: auto 1fr; column-gap: 8px; padding: 8px 10px; font-family: var(--pixel); font-size: 8px; line-height: 1.6; color: var(--coin); letter-spacing: 0.06em; }
+.vault-group > summary::-webkit-details-marker { display: none; }
+.vault-group > summary::before { content: "▶"; color: var(--mute); grid-row: span 2; }
+.vault-group[open] > summary::before { content: "▼"; }
+.vault-group-doc { font-family: var(--crt); font-size: 15px; color: var(--mute); letter-spacing: 0; }
+.vault-group .vault-list { padding: 0 8px 8px; max-height: none; }
+
+/* Tabla del método húngaro (dentro del cuaderno) */
+.h-table { border-collapse: separate; border-spacing: 0; margin: 8px 0 12px; font-size: 20px; font-variant-numeric: tabular-nums; }
+.h-table th { font-weight: 400; color: var(--nb-soft); font-size: 17px; padding: 2px 10px; text-align: center; white-space: nowrap; }
+.h-table tr > th:first-child { text-align: right; }
+.h-table th.h-dummy, .h-table th.h-side { font-style: italic; color: #8ff3ff; }
+.h-table td { position: relative; text-align: center; padding: 2px 12px; min-width: 2.6em; border: 1px solid rgba(241, 237, 255, 0.22); white-space: nowrap; }
+.h-table td > span { position: relative; z-index: 1; display: inline-block; min-width: 1.4em; }
+.h-table td.h-zero > span { color: var(--coin); font-weight: 700; }
+.h-table td.h-m > span { color: var(--nb-red); }
+.h-table td.h-side { border: 0; color: #8ff3ff; font-style: italic; }
+.h-table tr.h-bottom td { border: 0; color: #8ff3ff; font-style: italic; }
+.h-table tr.h-bottom th { color: #8ff3ff; font-style: italic; }
+.h-table tr.h-cov-r td:not(.h-side)::after { content: ""; position: absolute; left: -1px; right: -1px; top: 50%; height: 4px; margin-top: -2px; background: rgba(255, 62, 165, 0.75); }
+.h-table td.h-cov-c::before { content: ""; position: absolute; top: -1px; bottom: -1px; left: 50%; width: 4px; margin-left: -2px; background: rgba(255, 62, 165, 0.75); }
+.h-table td.h-cross { background: rgba(255, 62, 165, 0.18); }
+.h-table td.h-asg > span { border: 2.5px solid var(--win); border-radius: 50%; padding: 0 6px; color: var(--win); font-weight: 700; transform: rotate(-4deg); }
+
+/* Red (dentro del cuaderno) */
+.n-svg { max-width: 100%; height: auto; display: block; margin: 6px 0 10px; font-family: var(--nb-hand); }
+.n-arc { fill: none; stroke: rgba(241, 237, 255, 0.55); stroke-width: 2; }
+.n-arc.n-used { stroke: #8ff3ff; stroke-width: 3; }
+.n-arc.n-path { stroke: var(--coin); stroke-width: 5; }
+.n-arc.n-cut { stroke: var(--nb-red); stroke-width: 3.5; stroke-dasharray: 8 6; }
+.nh { fill: rgba(241, 237, 255, 0.75); }
+.nh-path { fill: var(--coin); }
+.nh-cut { fill: var(--nb-red); }
+.n-lab { fill: var(--nb-ink); font-size: 16px; font-weight: 700; paint-order: stroke; stroke: var(--nb-paper); stroke-width: 5px; stroke-linejoin: round; }
+.n-lab-path { fill: var(--coin); }
+.n-back { fill: var(--nb-red); font-size: 13px; font-weight: 700; paint-order: stroke; stroke: var(--nb-paper); stroke-width: 4px; }
+.n-node circle { fill: var(--nb-paper); stroke: var(--nb-ink); stroke-width: 2.5; }
+.n-node text { fill: var(--nb-ink); font-size: 17px; font-weight: 700; }
+.n-node.n-src circle, .n-node.n-sup circle { stroke: var(--win); stroke-width: 3.5; }
+.n-node.n-snk circle, .n-node.n-dem circle { stroke: var(--hot); stroke-width: 3.5; }
+.n-node.n-side-s circle { fill: rgba(92, 255, 122, 0.22); }
+.n-node.n-side-t circle { fill: rgba(255, 62, 165, 0.18); }
+.n-note { fill: #8ff3ff; font-size: 14px; font-weight: 700; paint-order: stroke; stroke: var(--nb-paper); stroke-width: 4px; }

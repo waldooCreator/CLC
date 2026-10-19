@@ -11,10 +11,13 @@
   ];
 
   const state = { mode: 'simplex', n: 2, m: 3, c: [], A: [], rel: [], b: [], signs: [], last: null };
+  const NET = ['assign', 'maxflow', 'mincost'];
+  const isNet = (mode) => NET.includes(mode);
 
   const el = {
     grid: $('#grid'), sense: $('#sense'), method: $('#method'), nvars: $('#nvars'), ncons: $('#ncons'),
     screen: $('#screen'), formError: $('#form-error'), btnSolve: $('#btn-solve'), btnClear: $('#btn-clear'), btnSound: $('#btn-sound'),
+    formLp: $('#form-lp'), formNet: $('#form-net'),
     btnAi: $('#btn-ai'), led: $('#ai-led'), dlg: $('#dlg-ai'), aiKey: $('#ai-key'), aiModel: $('#ai-model'), aiStatus: $('#ai-status'),
   };
 
@@ -137,7 +140,51 @@
   }
 
   // ---------- Resolver ----------
+  // Asignación, flujo máximo y costo mínimo: mismo recorrido que el Simplex (formulario → cálculo → pantalla).
+  function solveNet() {
+    const mode = state.mode;
+    const model = SX.NetForms.read(mode);
+    let res;
+    let nb;
+    let html;
+    if (mode === 'assign') {
+      res = SX.solveAssignment(model);
+      nb = SX.NetNB.assignNotebook(res);
+      const chk = SX.NetLP.check('assign', model, res.total, res.status);
+      html = SX.NetUI.screenAssign(res, SX.NB.render(nb), SX.NetLP.badge(chk));
+    } else if (mode === 'maxflow') {
+      res = SX.solveMaxFlow(model);
+      nb = SX.NetNB.maxflowNotebook(res, { layout: presetLayout() });
+      const chk = SX.NetLP.check('maxflow', model, res.total, res.status);
+      html = SX.NetUI.screenMaxflow(res, SX.NB.render(nb), SX.NetLP.badge(chk));
+    } else {
+      res = SX.solveMinCost(model);
+      nb = SX.NetNB.mincostNotebook(res, { layout: presetLayout() });
+      const chk = SX.NetLP.check('mincost', model, res.cost, res.status);
+      html = SX.NetUI.screenMincost(res, SX.NB.render(nb), SX.NetLP.badge(chk));
+    }
+    el.screen.innerHTML = html;
+    state.last = { kind: mode, res, model, nb, form: SX.NetForms.current(mode), comments: {} };
+    return res.status;
+  }
+
   function solve({ silent = false } = {}) {
+    if (isNet(state.mode)) {
+      let status;
+      try {
+        showFormError('');
+        status = solveNet();
+      } catch (err) {
+        showFormError(err.message);
+        if (!silent) Sound.lose();
+        return;
+      }
+      paintVaultForm();
+      if (silent) return;
+      status === 'optimal' ? Sound.win() : Sound.lose();
+      if (window.innerWidth < 1024) el.screen.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     let model;
     try {
       model = readModel();
@@ -202,6 +249,15 @@
   el.btnSolve.addEventListener('click', () => solve());
   el.btnClear.addEventListener('click', () => {
     Sound.click();
+    if (isNet(state.mode)) {
+      SX.NetForms.clear(state.mode);
+      SX.NetForms.render(state.mode);
+      state.preset = null;
+      renderPresets();
+      showFormError('');
+      idleScreen();
+      return;
+    }
     state.c = []; state.A = []; state.rel = []; state.b = []; state.signs = [];
     state.preset = null;
     renderPresets();
@@ -213,6 +269,9 @@
   function setMode(mode) {
     state.mode = mode;
     document.querySelectorAll('.mode').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.mode === mode)));
+    el.formLp.hidden = isNet(mode);
+    el.formNet.hidden = !isNet(mode);
+    if (isNet(mode)) SX.NetForms.render(mode);
   }
 
   document.querySelectorAll('[data-example]').forEach((btn) =>
@@ -231,8 +290,13 @@
   document.querySelectorAll('.mode').forEach((tab) =>
     tab.addEventListener('click', () => {
       Sound.coin();
+      const before = state.last && state.last.kind;
       setMode(tab.dataset.mode);
-      if (state.last) solve({ silent: true });
+      showFormError('');
+      if (!state.last) return;
+      // Simplex y Dualidad comparten el modelo; los demás modos tienen su propio formulario.
+      if (!isNet(before) && !isNet(state.mode)) solve({ silent: true });
+      else if (before !== state.mode) idleScreen();
     }));
 
   $('#graphic').addEventListener('change', () => { if (state.last) solve({ silent: true }); });
@@ -316,7 +380,8 @@
     form: $('#vault-form'), name: $('#vault-name'), save: $('#vault-save'), msg: $('#vault-msg'),
     list: $('#vault-list'), file: $('#vault-file'),
   };
-  const MODE_TXT = { simplex: 'SIMPLEX', dual: 'DUALIDAD' };
+  const MODE_TXT = { simplex: 'SIMPLEX', dual: 'DUALIDAD', assign: 'ASIGNACIÓN', maxflow: 'FLUJO MÁXIMO', mincost: 'COSTO MÍNIMO' };
+  const MODE_TAG = { simplex: '1P', dual: '2P', assign: '3P', maxflow: '4P', mincost: '5P' };
 
   function setVaultMsg(text, cls = 't-mute') {
     vault.msg.className = `small mt-2 ${cls}`;
@@ -325,6 +390,9 @@
 
   function suggestName() {
     const { model, kind } = state.last;
+    if (kind === 'assign') return `Asignación · ${model.agents.length}×${model.tasks.length} · ${model.sense === 'max' ? 'Max' : 'Min'}`;
+    if (kind === 'maxflow') return `Flujo máximo · ${model.source} → ${model.sink} · ${model.arcs.length} arcos`;
+    if (kind === 'mincost') return `Costo mínimo · ${model.nodes.length} nodos · ${model.arcs.length} arcos`;
     const obj = `${model.sense === 'max' ? 'Max' : 'Min'} Z = ${SX.linearExpr(model.c, model.varNames)}`;
     return `${kind === 'dual' ? 'Dualidad' : 'Simplex'} · ${obj}`.slice(0, 60);
   }
@@ -359,7 +427,7 @@
       const explained = e.comments && Object.keys(e.comments).length;
       return `<li class="vault-item${e.id === activeId ? ' is-active' : ''}">
         <button class="vault-open" type="button" data-vault-open="${esc(e.id)}">
-          <span class="vault-mode vault-mode--${e.mode}">${e.mode === 'dual' ? '2P' : '1P'}</span>
+          <span class="vault-mode vault-mode--${e.mode}">${MODE_TAG[e.mode] || '1P'}</span>
           <span class="vault-text"><span class="vault-name">${esc(e.name)}</span>
           <span class="vault-meta">${MODE_TXT[e.mode]}${when ? ` · ${esc(when)}` : ''}${explained ? ' · CON EXPLICACIÓN' : ''}</span></span>
         </button>
@@ -373,14 +441,38 @@
   const modelKey = (f) => JSON.stringify([f.sense, f.c, f.signs, f.rows]);
 
   function renderPresets() {
-    presetList.innerHTML = SX.Vault.presets.map((p) => `
-      <li class="vault-item${state.preset === p ? ' is-active' : ''}">
-        <button class="vault-open" type="button" data-preset="${p.slot}">
-          <span class="vault-mode vault-mode--preset">M${p.slot}</span>
-          <span class="vault-text"><span class="vault-name">Ejercicio ${p.slot} · ${esc(p.name)}</span>
-          <span class="vault-meta">${esc(p.topic.toUpperCase())} · ${esc(p.expected.pages.toUpperCase())}</span></span>
-        </button>
-      </li>`).join('');
+    presetList.innerHTML = SX.Vault.groups.map((g) => {
+      const items = SX.Vault.presets.filter((p) => p.group === g.key);
+      return `<details class="vault-group" ${items.includes(state.preset) || g.key === 'assign' ? 'open' : ''}>
+        <summary><span>${esc(g.title)}</span><span class="vault-group-doc">${esc(g.doc)}</span></summary>
+        <ul class="vault-list">${items.map((p, i) => `
+          <li class="vault-item${state.preset === p ? ' is-active' : ''}">
+            <button class="vault-open" type="button" data-preset="${p.slot}">
+              <span class="vault-mode vault-mode--preset">M${p.slot}</span>
+              <span class="vault-text"><span class="vault-name">Ejercicio ${i + 1} · ${esc(p.name)}</span>
+              <span class="vault-meta">${esc(p.topic.toUpperCase())} · ${esc(p.expected.pages.toUpperCase())}</span></span>
+            </button>
+          </li>`).join('')}</ul>
+      </details>`;
+    }).join('');
+  }
+
+  function loadPreset(p) {
+    if (p.mode === 'simplex') {
+      loadStrings(p.form);
+      $('#graphic').checked = p.form.graphic;
+    } else {
+      SX.NetForms.load(p.mode, p.form);
+    }
+    setMode(p.mode);
+    showFormError('');
+    state.preset = p;
+    const group = SX.Vault.groups.find((g) => g.key === p.group);
+    idleScreen(`MEMORIA ${p.slot} CARGADA<br>PULSA ▶ START`,
+      `${esc(p.name)} (${esc(group.title.toLowerCase())}). Al resolverlo, compara con ${esc(group.doc)} (${esc(p.expected.pages)}).`);
+    state.preset = p;
+    setVaultMsg(`Memoria ${p.slot} cargada en el formulario.`, 't-phos');
+    renderPresets();
   }
 
   presetList.addEventListener('click', (e) => {
@@ -388,15 +480,7 @@
     if (!btn) return;
     const p = SX.Vault.presets.find((x) => x.slot === Number(btn.dataset.preset));
     Sound.coin();
-    loadStrings(p.form);
-    $('#graphic').checked = p.form.graphic;
-    setMode('simplex');
-    showFormError('');
-    idleScreen(`MEMORIA ${p.slot} CARGADA<br>PULSA ▶ START`,
-      `Ejercicio ${p.slot} del informe: ${esc(p.name)}. Al resolverlo, compara con el PDF (${esc(p.expected.pages)}).`);
-    state.preset = p;
-    setVaultMsg(`Memoria ${p.slot} cargada en el formulario.`, 't-phos');
-    renderPresets();
+    loadPreset(p);
     if (window.innerWidth < 1024) el.btnSolve.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 
@@ -405,6 +489,13 @@
     const p = state.preset;
     if (!p || state.mode !== 'simplex' || modelKey(currentForm()) !== modelKey(p.form)) return null;
     return p.view;
+  }
+
+  // Con una memoria de red sin modificar, el dibujo usa las mismas posiciones que el PDF.
+  function presetLayout() {
+    const p = state.preset;
+    if (!p || p.mode !== state.mode || !p.layout) return null;
+    return JSON.stringify(SX.NetForms.current(p.mode)) === JSON.stringify(SX.NetForms.normalize(p.mode, p.form)) ? p.layout : null;
   }
 
   vault.name.addEventListener('input', () => { vault.name.dataset.auto = '0'; });
@@ -434,12 +525,13 @@
     renderPresets();
     Sound.coin();
     try {
-      loadStrings(entry.form);
+      if (isNet(entry.mode)) SX.NetForms.load(entry.mode, entry.form);
+      else loadStrings(entry.form);
     } catch {
       setVaultMsg(`"${entry.name}" tiene datos dañados y no se pudo abrir.`, 't-lose');
       return;
     }
-    $('#graphic').checked = Boolean(entry.form.graphic);
+    if (!isNet(entry.mode)) $('#graphic').checked = Boolean(entry.form.graphic);
     setMode(entry.mode);
     solve({ silent: true });
     if (!state.last) {
@@ -580,9 +672,32 @@
   });
 
   // ---------- Inicio ----------
+  SX.NetForms.attach(el.formNet, { enter: () => solve() });
+  el.formNet.addEventListener('net-example', () => {
+    Sound.coin();
+    state.preset = null;
+    renderPresets();
+    showFormError('');
+    idleScreen('EJEMPLO CARGADO<br>PULSA ▶ START', 'Revisa los datos en el formulario y pulsa START para ver la solución paso a paso.');
+  });
+
   paintSound();
   paintLed();
   loadStrings(EXAMPLES[0]);
   renderPresets();
   idleScreen();
+
+  // Enlace directo a una memoria: index.html#m11 la carga; index.html#m11&run además la resuelve.
+  function openFromHash() {
+    const m = location.hash.match(/^#m(\d+)(&run)?/);
+    const p = m && SX.Vault.presets.find((x) => x.slot === Number(m[1]));
+    if (!p) return;
+    loadPreset(p);
+    if (m[2]) {
+      solve({ silent: true });
+      el.screen.querySelectorAll('details.sheet').forEach((d) => { d.open = true; });
+    }
+  }
+  window.addEventListener('hashchange', openFromHash);
+  openFromHash();
 })();

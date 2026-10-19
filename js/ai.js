@@ -113,6 +113,22 @@ Ejemplos del tono (de apuntes reales):
 "Los signos no me los invento, los saco de la tabla. Como x1 es ≤ 0 y el primal es de Max, busco esa fila y me dice que en el Min la restricción es ≤. Por eso la primera me queda y1 + 5y2 ≤ 8."
 "De la igualdad despejo y1 = −2 + 2y2. Eso lo reemplazo en las otras restricciones y así me quedan solo con y2, que es más fácil."`;
 
+  const TOPICS = {
+    simplex: 'Método Simplex Revisado',
+    dual: 'teoría de la dualidad (pasar del primal al dual y resolverlo)',
+    assign: 'el problema de asignación resuelto con el método húngaro (Kuhn-Munkres), incluidos sus casos particulares',
+    maxflow: 'el problema de flujo máximo resuelto con caminos de aumento (Ford-Fulkerson con búsqueda en anchura) y el corte mínimo',
+    mincost: 'el problema de flujo a costo mínimo resuelto con rutas más baratas sucesivas',
+  };
+  const LP_HELP = 'en la forma estándar se agregan holguras (≤), excesos y artificiales (≥ o =) y la base inicial da B⁻¹ = I; en cada iteración xB = B⁻¹·b, π = cB·B⁻¹, entra la variable con zj − cj más negativo, sale la de menor razón xB/α y E actualiza B⁻¹; en dualidad los signos salen de la tabla, cada restricción del primal da una variable dual y cada variable da una restricción; en los despejes se buscan cortes, se reemplaza, se sacan las esquinas y se evalúa el objetivo.';
+  const HELP = {
+    simplex: LP_HELP,
+    dual: LP_HELP,
+    assign: 'restar el mismo número a toda una fila o columna no cambia cuál es la mejor asignación, solo baja el total; por eso se resta el menor de cada fila y luego de cada columna para fabricar ceros; después se tapan los ceros con el menor número de líneas; si hacen falta tantas líneas como filas, ya se puede asignar un cero por fila y columna; si no, se toma k = el menor número sin tapar, se resta a lo no tapado y se suma en los cruces de líneas. Casos particulares: si faltan filas o columnas se agregan ficticias con costo 0 (lo asignado ahí queda sin hacer), si es de maximizar se resta cada valor del mayor (pérdida de oportunidad), una celda prohibida vale M (gigante), un agente que hace varias tareas se copia una vez por tarea, y si hay otra forma de asignar ceros hay óptimos múltiples.',
+    maxflow: 'cada arco tiene una capacidad; en cada ronda se busca el camino de la fuente al sumidero con menos arcos que todavía tenga espacio; lo que se puede mandar por él es el tramo más angosto (cuello de botella); un tramo recorrido al revés significa devolver flujo que ya iba por ese arco para mandarlo por otro lado; cuando ya no hay camino, los nodos que todavía se alcanzan desde la fuente forman el corte mínimo, y la suma de capacidades de los arcos que cruzan el corte es igual al flujo máximo.',
+    mincost: 'los nodos con número positivo ofrecen unidades y los negativos las piden; todas las ofertas se juntan en un punto inicial S* y todas las demandas en T*; en cada ronda se busca la ruta más barata por unidad que todavía tenga espacio (un tramo al revés resta su costo porque deshace un envío), se manda lo que permita el tramo más limitado y se suma costo por unidad × unidades; si la oferta y la demanda no son iguales se agrega un nodo ficticio con costo 0; al final se revisa que en cada nodo lo que sale menos lo que entra sea su oferta.',
+  };
+
   // Acepta las distintas formas en que los modelos devuelven la lista de pasos.
   function parseExplanations(text, count) {
     const byNum = {};
@@ -154,7 +170,8 @@ Ejemplos del tono (de apuntes reales):
   }
 
   async function comment(kind, steps, onProgress = () => {}) {
-    const topic = kind === 'dual' ? 'teoría de la dualidad (pasar del primal al dual y resolverlo)' : 'Método Simplex Revisado';
+    const topic = TOPICS[kind] || TOPICS.simplex;
+    const help = HELP[kind] || HELP.simplex;
     const numbered = steps.map((s, i) => ({ ...s, n: i + 1 }));
 
     const ask = async (list, withSummary) => {
@@ -165,7 +182,7 @@ Para CADA paso escribe una explicación de 2 a 4 frases (entre 30 y 70 palabras)
 - por qué se hace así,
 - y cuál es el dato clave que sale de ahí.
 Explica TODOS los pasos que te paso, sin saltarte ninguno, cada uno con su mismo número.
-Ayuda para entender los pasos: en la forma estándar se agregan holguras (≤), excesos y artificiales (≥ o =) y la base inicial da B⁻¹ = I; en cada iteración xB = B⁻¹·b, π = cB·B⁻¹, entra la variable con zj − cj más negativo, sale la de menor razón xB/α y E actualiza B⁻¹; en dualidad los signos salen de la tabla, cada restricción del primal da una variable dual y cada variable da una restricción; en los despejes se buscan cortes, se reemplaza, se sacan las esquinas y se evalúa el objetivo.
+Ayuda para entender los pasos: ${help}
 ${HUMAN_STYLE}
 Responde SOLO con este JSON, sin nada antes ni después:
 {"pasos": [{"paso": ${list[0].n}, "explicacion": "..."}, {"paso": ${list[Math.min(1, list.length - 1)].n}, "explicacion": "..."}]${withSummary ? ', "resumen": "2 o 3 frases: qué se hizo y qué significa el resultado"' : ''}}`;

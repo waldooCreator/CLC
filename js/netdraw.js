@@ -52,6 +52,8 @@
     const pairKey = (a, b) => `${a}\u0000${b}`;
     const present = new Set(drawn.map((a) => pairKey(a.from, a.to)));
 
+    const outDeg = {};
+    drawn.forEach((a) => { outDeg[a.from] = (outDeg[a.from] || 0) + 1; });
     const parts = [];
     drawn.forEach((a, k) => {
       const [x1, y1] = P(a.from);
@@ -82,8 +84,10 @@
       }
       const label = opts.labels ? opts.labels[k] : '';
       if (label) {
-        const lx = (sx + 2 * cx + ex) / 4;
-        const ly = (sy + 2 * cy + ey) / 4;
+        // Con muchos arcos saliendo de un nodo, la etiqueta va cerca del origen, donde los arcos ya se separaron.
+        const t = outDeg[a.from] >= 3 ? 0.2 : 0.5;
+        const lx = (1 - t) * (1 - t) * sx + 2 * (1 - t) * t * cx + t * t * ex;
+        const ly = (1 - t) * (1 - t) * sy + 2 * (1 - t) * t * cy + t * t * ey;
         parts.push(`<text class="n-lab${dir !== undefined ? ' n-lab-path' : ''}" x="${lx.toFixed(1)}" y="${(ly + 5).toFixed(1)}" text-anchor="middle">${esc(label)}</text>`);
       }
     });

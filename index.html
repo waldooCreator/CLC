@@ -32,7 +32,7 @@
   <header class="marquee">
     <div class="mx-auto max-w-[1440px] px-4 sm:px-6 py-5 flex flex-wrap items-center justify-between gap-5">
       <div class="flex flex-col gap-2">
-        <p class="font-pixel text-[9px] tracking-[0.2em] text-mute">INVESTIGACIÓN DE OPERACIONES · 1ER PREVIO</p>
+        <p class="font-pixel text-[9px] tracking-[0.2em] text-mute">INVESTIGACIÓN DE OPERACIONES · SIMPLEX, ASIGNACIÓN Y REDES</p>
         <h1 class="title font-pixel">SIMPLEX<span>ARCADE</span></h1>
         <p class="font-pixel text-[9px] text-coin blink">INSERT COIN ▸ PRESS START</p>
       </div>
@@ -48,10 +48,14 @@
       <div class="modes" role="tablist" aria-label="Modo de juego">
         <button class="mode" role="tab" data-mode="simplex" aria-selected="true" type="button"><span>1P</span>SIMPLEX REVISADO</button>
         <button class="mode" role="tab" data-mode="dual" aria-selected="false" type="button"><span>2P</span>DUALIDAD</button>
+        <button class="mode" role="tab" data-mode="assign" aria-selected="false" type="button"><span>3P</span>ASIGNACIÓN</button>
+        <button class="mode" role="tab" data-mode="maxflow" aria-selected="false" type="button"><span>4P</span>FLUJO MÁXIMO</button>
+        <button class="mode" role="tab" data-mode="mincost" aria-selected="false" type="button"><span>5P</span>COSTO MÍNIMO</button>
       </div>
 
       <section class="px-panel" aria-labelledby="t-modelo">
         <h2 id="t-modelo" class="panel-tag">MODELO</h2>
+        <div id="form-lp">
         <div class="flex flex-wrap gap-2 mb-5" aria-label="Ejemplos">
           <span class="font-pixel text-[9px] text-mute self-center mr-1">EJEMPLOS</span>
           <button class="px-chip" data-example="0" type="button">MAX ≤</button>
@@ -82,6 +86,8 @@
           <span class="px-check-box" aria-hidden="true"></span>
           <span>INCLUIR DESPEJES Y GRÁFICA <span class="t-mute">(cuando hay 2 variables)</span></span>
         </label>
+        </div>
+        <div id="form-net" hidden></div>
         <p id="form-error" class="form-error" role="alert" hidden></p>
 
         <div class="flex flex-wrap gap-3 mt-6">
@@ -92,9 +98,9 @@
 
       <section class="px-panel" aria-labelledby="t-boveda">
         <h2 id="t-boveda" class="panel-tag panel-tag--coin">BÓVEDA DE EJERCICIOS</h2>
-        <h3 class="vault-sub">MEMORIAS DEL INFORME</h3>
-        <p class="small t-mute mb-3">Los 3 ejercicios del PDF. Elige uno, pulsa ▶ START y compara con el informe.</p>
-        <ul id="vault-presets" class="vault-list mb-6" aria-label="Ejercicios del informe"></ul>
+        <h3 class="vault-sub">MEMORIAS DE LOS INFORMES</h3>
+        <p class="small t-mute mb-3">Los 15 ejercicios resueltos en los PDF de la carpeta documentacion, agrupados por tema. Elige uno, pulsa ▶ START y compara con su informe.</p>
+        <div id="vault-presets" class="vault-groups mb-6" aria-label="Ejercicios de los informes"></div>
 
         <h3 class="vault-sub">MIS EJERCICIOS</h3>
         <p class="small t-mute mb-3">Resuelve un ejercicio y guárdalo aquí para volver a mostrarlo cuando quieras, con su explicación.</p>
@@ -116,7 +122,7 @@
   </main>
 
   <footer class="mx-auto max-w-[1440px] px-4 sm:px-6 pb-10 small t-mute">
-    Cálculo exacto con fracciones · resultados comprobados con la librería javascript-lp-solver 1.0.3 · explicación a detalle con IA vía OpenRouter
+    Cálculo exacto con fracciones · Simplex Revisado, dualidad, asignación (Kuhn-Munkres), flujo máximo y flujo a costo mínimo · resultados comprobados con la librería javascript-lp-solver 1.0.3 · explicación a detalle con IA vía OpenRouter
   </footer>
 
   <dialog id="dlg-ai" class="dialog">
@@ -156,6 +162,15 @@
   <script src="js/verify.js"></script>
   <script src="js/notebook.js"></script>
   <script src="js/ai.js"></script>
+  <script src="js/assign.js"></script>
+  <script src="js/maxflow.js"></script>
+  <script src="js/mincost.js"></script>
+  <script src="js/netmodel.js"></script>
+  <script src="js/netverify.js"></script>
+  <script src="js/netdraw.js"></script>
+  <script src="js/netnotebook.js"></script>
+  <script src="js/netforms.js"></script>
+  <script src="js/netui.js"></script>
   <script src="js/vault.js"></script>
   <script src="js/app.js"></script>
 </body>
