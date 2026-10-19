@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const FILES = ['fraction', 'linalg', 'solver', 'dual', 'verify', 'assign', 'maxflow', 'mincost', 'netmodel', 'netverify', 'vault', 'graphic', 'notebook', 'netnotebook'];
+const FILES = ['fraction', 'linalg', 'solver', 'dual', 'verify', 'assign', 'maxflow', 'mincost', 'netmodel', 'netverify', 'vault', 'graphic', 'notebook', 'netdraw', 'netnotebook'];
 
 export function loadSX() {
   const ctx = createContext({ console });

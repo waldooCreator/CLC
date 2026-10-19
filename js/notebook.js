@@ -297,6 +297,7 @@
     if (l.type === 'svg') return `<div class="nb-graph">${l.html}</div>`;
     if (l.type === 'dualTable') return renderDualTable(l.hl);
     if (l.type === 'map') return renderMap(l.groups);
+    if (l.type === 'hmatrix') return SX.NetNB.renderH(l);
     return '';
   }
 
@@ -334,7 +335,8 @@
     if (typeof l === 'string') return strip(l);
     if (l.type === 'row') return strip(l.hint ? `${l.text.trim()}   (${l.hint})` : l.text.trim());
     if (l.type === 'matrices') return l.items.map(([label, rows]) => `${label} [${rows.map((r) => r.join(' ')).join(' ; ')}]`).join('   ');
-    if (l.type === 'svg') return '(gráfica de la región)';
+    if (l.type === 'svg') return l.text || '(gráfica de la región)';
+    if (l.type === 'hmatrix') return SX.NetNB.plainH(l);
     if (l.type === 'dualTable') return '(tabla: Max variables ≥0/≤0/irrestricta ↔ Min restricciones ≥/≤/= ; Max restricciones ≤/≥/= ↔ Min variables ≥0/≤0/irrestricta)';
     if (l.type === 'map') return l.groups.map((g) => `${g.title}:\n${g.rows.map((r) => strip(`${r.left} → ${r.right} (${r.hint})`)).join('\n')}`).join('\n');
     return '';

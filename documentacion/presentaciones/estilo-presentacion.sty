@@ -1,0 +1,43 @@
+% Tema Beamer en blanco y negro, con el mismo estilo de libro que los documentos.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{estilo-presentacion}
+\usepackage[spanish,es-noshorthands,es-nodecimaldot]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc}
+\usepackage{graphicx}
+
+\usetheme{default}
+\usecolortheme{default}
+\setbeamercolor{structure}{fg=black}
+\setbeamercolor{normal text}{fg=black, bg=white}
+\setbeamercolor{frametitle}{fg=black}
+\setbeamercolor{title}{fg=black}
+\setbeamercolor{block title}{fg=white, bg=black}
+\setbeamercolor{block body}{fg=black, bg=gray!12}
+\setbeamerfont{frametitle}{series=\bfseries, size=\large}
+\setbeamerfont{title}{series=\bfseries, size=\LARGE}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize items}{\textbullet}
+\setbeamertemplate{blocks}[rounded][shadow=false]
+\setbeamertemplate{frametitle}{\vspace{0.6em}\insertframetitle\par\vspace{0.15em}{\color{black}\rule{\textwidth}{0.6pt}}}
+\setbeamertemplate{footline}{\hfill{\scriptsize\insertframenumber\,/\,\inserttotalframenumber}\hspace{1em}\vspace{0.6em}}
+
+\definecolor{resalta}{gray}{0.82}
+\tikzset{
+  nodo/.style={circle, draw, thick, minimum size=7mm, inner sep=0pt, font=\small\bfseries, fill=white},
+  fuente/.style={nodo, fill=gray!25},
+  sumidero/.style={nodo, double, fill=gray!25},
+  arco/.style={-{Stealth[length=2.2mm]}, thick},
+  camino/.style={-{Stealth[length=2.6mm]}, line width=2.2pt},
+  corte/.style={very thick, dashed},
+  etq/.style={fill=white, inner sep=1pt, font=\scriptsize},
+}
+\newcommand{\res}[1]{\colorbox{resalta}{$\displaystyle #1$}}
+\newcommand{\asg}[1]{\tikz[baseline=(c.base)]\node[draw, circle, thick, inner sep=1.2pt] (c) {#1};}
+% Captura de la calculadora; si todavía no existe, deja un recuadro.
+\newcommand{\captura}[2][0.82\textheight]{\IfFileExists{capturas/#2.png}{\includegraphics[height=#1, width=\textwidth, keepaspectratio]{capturas/#2.png}}{\fbox{\parbox[c][#1][c]{0.8\textwidth}{\centering Captura de la calculadora (#2)}}}}
+\endinput

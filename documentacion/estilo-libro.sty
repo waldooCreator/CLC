@@ -1,0 +1,71 @@
+% Estilo de libro compartido por todos los documentos de documentacion/ (copiado del preámbulo de ejercicios-simplex-revisado.tex).
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{estilo-libro}
+\usepackage[spanish,es-noshorthands,es-nodecimaldot]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric}
+\usepackage[most]{tcolorbox}
+\usepackage{booktabs,array}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+% ---------- Colores (blanco y negro) ----------
+\definecolor{tinta}{gray}{0}
+\definecolor{nota}{gray}{0}
+\definecolor{entra}{gray}{0}
+\definecolor{sale}{gray}{0}
+\definecolor{azul}{gray}{0}
+\definecolor{resalta}{gray}{0.82}
+\definecolor{region}{gray}{0.80}
+
+% Estilos de línea para distinguir restricciones sin usar color
+\tikzset{
+  r1/.style={thick},
+  r2/.style={thick, dashed},
+  r3/.style={very thick, dotted},
+  r4/.style={thick, dash dot},
+  zline/.style={thick, gray!55},
+}
+\newcommand{\swatch}[1]{\tikz[baseline=-0.6ex]\draw[#1] (0,0)--(0.6,0);}
+
+% ---------- Atajos ----------
+\newcommand{\nota}[1]{\qquad\text{\small\color{nota}\itshape$\leftarrow$ #1}}
+\newcommand{\entra}[1]{\textcolor{entra}{\textbf{#1}}}
+\newcommand{\sale}[1]{\textcolor{sale}{\textbf{#1}}}
+\newcommand{\res}[1]{\colorbox{resalta}{$\displaystyle #1$}}
+\newcommand{\Binv}{B^{-1}}
+\newcommand{\paso}[1]{\par\medskip\noindent{\color{tinta}\bfseries\large #1}\par\smallskip}
+\renewcommand{\arraystretch}{1.25}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+
+\newtcolorbox{idea}[1][]{enhanced, breakable, colback=nota!6, colframe=nota!70!black,
+  arc=2mm, boxrule=0.6pt, left=8pt, right=8pt, top=6pt, bottom=6pt,
+  fonttitle=\bfseries, title={#1}}
+\newtcolorbox{ojo}{enhanced, breakable, colback=resalta!35, colframe=resalta!80!black,
+  arc=2mm, boxrule=0.5pt, left=8pt, right=8pt, top=4pt, bottom=4pt}
+
+% ---------- Extras para asignación y redes ----------
+\usetikzlibrary{calc}
+% Nodo de una red: \node[nodo] (A) at (0,0) {A};
+\tikzset{
+  nodo/.style={circle, draw, thick, minimum size=7mm, inner sep=0pt, font=\small\bfseries, fill=white},
+  fuente/.style={nodo, fill=gray!25},
+  sumidero/.style={nodo, double, fill=gray!25},
+  arco/.style={-{Stealth[length=2.2mm]}, thick},
+  camino/.style={-{Stealth[length=2.6mm]}, line width=2.2pt},
+  usado/.style={-{Stealth[length=2.2mm]}, very thick},
+  corte/.style={very thick, dashed},
+  etq/.style={fill=white, inner sep=1pt, font=\scriptsize},
+}
+% Celda asignada (cero encerrado en un círculo) dentro de una tabla
+\newcommand{\asg}[1]{\tikz[baseline=(c.base)]\node[draw, circle, thick, inner sep=1.2pt] (c) {#1};}
+% Celda tachada por una línea (el número queda legible)
+\newcommand{\tap}[1]{\colorbox{resalta}{$#1$}}
+\endinput

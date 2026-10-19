@@ -14,3 +14,10 @@ desktop.ini
 
 # Dependencias de las pruebas
 node_modules/
+documentacion/presentaciones/*.aux
+documentacion/presentaciones/*.log
+documentacion/presentaciones/*.out
+documentacion/presentaciones/*.nav
+documentacion/presentaciones/*.snm
+documentacion/presentaciones/*.toc
+documentacion/presentaciones/*.vrb
