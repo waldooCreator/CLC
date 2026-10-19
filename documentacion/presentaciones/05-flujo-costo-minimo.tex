@@ -1,0 +1,355 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{estilo-presentacion}
+
+\newcommand{\ra}{\ensuremath{\to}}
+\tikzset{
+  regreso/.style={-{Stealth[length=2.6mm]}, line width=2.2pt, dash pattern=on 5pt off 2.5pt},
+  gris/.style={-{Stealth[length=2mm]}, thin, gray!55},
+  usado/.style={-{Stealth[length=2.2mm]}, very thick},
+}
+
+\title{El problema de flujo a costo mínimo}
+\subtitle{Rutas más baratas sucesivas y tres ejercicios resueltos}
+\author{Investigación de Operaciones}
+\institute{Asignación y flujo en redes}
+\date{}
+
+\begin{document}
+
+% 1 ---------------------------------------------------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% 2 ---------------------------------------------------------------
+\begin{frame}{Integrantes}
+  \vspace{1.2em}
+  \begin{enumerate}\setlength{\itemsep}{1.4em}
+    \item \rule{0.7\textwidth}{0.4pt}
+    \item \rule{0.7\textwidth}{0.4pt}
+    \item \rule{0.7\textwidth}{0.4pt}
+    \item \rule{0.7\textwidth}{0.4pt}
+    \item \rule{0.7\textwidth}{0.4pt}
+  \end{enumerate}
+\end{frame}
+
+% 3 ---------------------------------------------------------------
+\begin{frame}{¿Qué problema resuelve?}
+  \begin{columns}[c]
+    \begin{column}{0.5\textwidth}
+      Mandar cosas de donde \textbf{sobran} a donde \textbf{faltan}, \textbf{gastando lo menos}.
+      \bigskip
+
+      \textbf{Ejemplo:} dos panaderías (A y B) hornean 10 cajas cada una; dos tiendas (X y Y) piden 10 cada una.
+      \bigskip
+
+      ¿Quién abastece a quién?
+    \end{column}
+    \begin{column}{0.48\textwidth}\centering
+      \begin{tikzpicture}[x=1.2cm, y=1.2cm]
+        \node[fuente, label=left:{\small $+10$}] (A) at (0,0) {A};
+        \node[fuente, label=left:{\small $+10$}] (B) at (0,-2) {B};
+        \node[sumidero, label=right:{\small $-10$}] (X) at (3,0) {X};
+        \node[sumidero, label=right:{\small $-10$}] (Y) at (3,-2) {Y};
+        \draw[arco] (A) -- node[etq, above] {1} (X);
+        \draw[arco] (A) -- node[etq, pos=0.25] {3} (Y);
+        \draw[arco] (B) -- node[etq, pos=0.25] {2} (X);
+        \draw[arco] (B) -- node[etq, below] {8} (Y);
+      \end{tikzpicture}
+
+      \small costo por caja en cada flecha
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% 4 ---------------------------------------------------------------
+\begin{frame}{Palabras clave}
+  \small
+  \begin{tabular}{p{3.2cm}p{10cm}}
+    \toprule
+    \textbf{Término} & \textbf{Qué significa} \\
+    \midrule
+    Oferta / demanda & Un nodo produce ($+$) o pide ($-$). Si es 0, es de \textbf{transbordo} (punto de paso). \\
+    Arco & Por dónde se manda: tiene \textbf{costo por unidad} y, a veces, \textbf{capacidad}. \\
+    Flujo & Cuánto se manda por cada arco (lo que se decide). \\
+    Conservación & En cada nodo: lo que sale $-$ lo que entra $=$ su oferta. \\
+    $S^*$ y $T^*$ & Punto inicial que junta las ofertas; punto final que junta las demandas. \\
+    Tramo al revés & Deshacer un envío anterior: \textbf{resta} su costo. \\
+    \bottomrule
+  \end{tabular}
+  \bigskip
+
+  \centering
+  Modelo: \ $\text{Min} \sum c_{ij}x_{ij}$ \ \ con \ \ sale $-$ entra $= b_i$, \ \ $0 \le x_{ij} \le u_{ij}$
+\end{frame}
+
+% 5 ---------------------------------------------------------------
+\begin{frame}{Es el problema ``padre''}
+  \small
+  \begin{tabular}{p{2.8cm}p{10.4cm}}
+    \toprule
+    \textbf{Problema} & \textbf{Cómo se ve como flujo a costo mínimo} \\
+    \midrule
+    Transporte & Orígenes y destinos, un arco de cada origen a cada destino. \\
+    Asignación & Transporte donde cada persona ofrece 1 y cada tarea pide 1. \\
+    Transbordo & Hay puntos de paso (oferta 0). \\
+    Ruta más corta & Se manda \textbf{1 unidad}; el costo de cada arco es su distancia. \\
+    Flujo máximo & Arcos con costo 0 y un atajo carísimo de la fuente al destino. \\
+    \bottomrule
+  \end{tabular}
+  \bigskip
+
+  \centering Un solo método sirve para todos.
+\end{frame}
+
+% 6 ---------------------------------------------------------------
+\begin{frame}{El método: rutas más baratas sucesivas}
+  \begin{columns}[c]
+    \begin{column}{0.48\textwidth}
+      \begin{enumerate}\setlength{\itemsep}{0.5em}
+        \item[0.] Balancear y juntar ofertas en $S^*$ y demandas en $T^*$.
+        \item Ver el \textbf{espacio que queda} en cada arco (y los tramos al revés).
+        \item Buscar la \textbf{ruta más barata} de $S^*$ a $T^*$ (Bellman-Ford).
+        \item Enviar lo que permita el \textbf{tramo más limitado}.
+        \item Sumar al costo y repetir hasta entregar todo.
+      \end{enumerate}
+    \end{column}
+    \begin{column}{0.5\textwidth}\centering
+      \begin{tikzpicture}[scale=0.72, transform shape, node distance=3.5mm and 6mm, >=Stealth,
+        caja/.style={draw, rounded corners=2pt, fill=gray!8, align=center, minimum width=4.4cm, inner sep=4pt},
+        decision/.style={draw, diamond, aspect=2.4, fill=gray!18, align=center, inner sep=1pt},
+        fin/.style={draw, rounded corners=8pt, fill=gray!25, align=center, inner sep=5pt}]
+        \node[caja] (ini) {Preparar: balancear, $S^*$ y $T^*$};
+        \node[decision, below=of ini] (falta) {¿Falta\\ entregar?};
+        \node[fin, right=of falta] (opt) {\textbf{Óptimo}};
+        \node[caja, below=of falta] (resid) {Red de lo que queda};
+        \node[decision, below=of resid] (hay) {¿Hay\\ ruta?};
+        \node[fin, right=of hay] (inf) {\textbf{Sin solución}};
+        \node[caja, below=of hay] (env) {Ruta más barata, enviar,\\ sumar al costo};
+        \draw[->] (ini) -- (falta);
+        \draw[->] (falta) -- node[above, font=\scriptsize] {no} (opt);
+        \draw[->] (falta) -- node[right, font=\scriptsize] {sí} (resid);
+        \draw[->] (resid) -- (hay);
+        \draw[->] (hay) -- node[above, font=\scriptsize] {no} (inf);
+        \draw[->] (hay) -- node[right, font=\scriptsize] {sí} (env);
+        \draw[->] (env.west) -- ++(-0.7,0) |- (falta.west);
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% 7 ---------------------------------------------------------------
+\begin{frame}{La clave: se puede deshacer un envío}
+  \centering
+  \begin{tikzpicture}[x=1.1cm, y=1.0cm]
+    \begin{scope}
+      \node[fuente] (A) at (0,0) {A}; \node[fuente] (B) at (0,-2) {B};
+      \node[sumidero] (X) at (3,0) {X}; \node[sumidero] (Y) at (3,-2) {Y};
+      \draw[camino] (A) -- node[etq, above] {$+1$} (X);
+      \draw[gris] (A) -- (Y); \draw[gris] (B) -- (X); \draw[gris] (B) -- (Y);
+      \node[font=\small\bfseries, align=center] at (1.5,-3) {Ruta 1: A \ra{} X\\ \footnotesize 10 cajas $\times$ 1 = 10};
+    \end{scope}
+    \begin{scope}[xshift=6.2cm]
+      \node[fuente] (A) at (0,0) {A}; \node[fuente] (B) at (0,-2) {B};
+      \node[sumidero] (X) at (3,0) {X}; \node[sumidero] (Y) at (3,-2) {Y};
+      \draw[gris] (B) -- (Y);
+      \draw[camino] (B) -- node[etq, pos=0.22] {$+2$} (X);
+      \draw[regreso] (X) -- node[etq, above] {$-1$} (A);
+      \draw[camino] (A) -- node[etq, pos=0.22] {$+3$} (Y);
+      \node[font=\small\bfseries, align=center] at (1.5,-3) {Ruta 2: B \ra{} X \ra{} A \ra{} Y\\ \footnotesize $2 - 1 + 3 = 4$ por caja $\Rightarrow$ 40};
+    \end{scope}
+  \end{tikzpicture}
+  \bigskip
+
+  B abastece a X y A \textbf{deja de mandarle} (ahorra 1) para abastecer a Y. \\
+  Total $10 + 40 = 50$, en vez de $10 + 80 = 90$.
+\end{frame}
+
+% 8 ---------------------------------------------------------------
+\begin{frame}{Distribution Unlimited Co.: el problema}
+  \begin{columns}[c]
+    \begin{column}{0.36\textwidth}
+      \small
+      Hillier y Lieberman.
+      \medskip
+
+      2 fábricas (F1: 50, F2: 40), un centro de distribución (CD) y 2 almacenes (A1 pide 30, A2 pide 60).
+      \medskip
+
+      Límites: F1 \ra{} F2 $\le 10$ y CD \ra{} A2 $\le 80$.
+    \end{column}
+    \begin{column}{0.62\textwidth}\centering
+      \begin{tikzpicture}[x=1.5cm, y=-1.05cm]
+        \node[fuente, label=left:{\small $+50$}] (F1) at (0,0.4) {F1};
+        \node[fuente, label=left:{\small $+40$}] (F2) at (0,3.2) {F2};
+        \node[nodo, label=below:{\small $0$}] (CD) at (2,1.8) {CD};
+        \node[sumidero, label=right:{\small $-30$}] (A1) at (4,0.4) {A1};
+        \node[sumidero, label=right:{\small $-60$}] (A2) at (4,3.2) {A2};
+        \draw[arco] (F1) -- node[etq, align=center] {200\\(máx.\ 10)} (F2);
+        \draw[arco] (F1) -- node[etq] {400} (CD);
+        \draw[arco] (F1) -- node[etq, above] {900} (A1);
+        \draw[arco] (F2) -- node[etq] {300} (CD);
+        \draw[arco] (CD) -- node[etq, align=center] {100\\(máx.\ 80)} (A2);
+        \draw[arco] (A1) to[bend left=22] node[etq, right] {300} (A2);
+        \draw[arco] (A2) to[bend left=22] node[etq, left] {200} (A1);
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% 9 ---------------------------------------------------------------
+\begin{frame}{Distribution Unlimited Co.: las rutas}
+  \begin{columns}[c]
+    \begin{column}{0.56\textwidth}
+      \small
+      \begin{tabular}{clccc}
+        \toprule
+         & \textbf{Ruta} & \textbf{c/u} & \textbf{Envío} & \textbf{Acum.} \\
+        \midrule
+        1 & F2 \ra{} CD \ra{} A2 & 400 & 40 & 16\,000 \\
+        2 & F1 \ra{} CD \ra{} A2 & 500 & 20 & 26\,000 \\
+        3 & F1 \ra{} CD \ra{} A2 \ra{} A1 & 700 & 20 & 40\,000 \\
+        4 & F1 \ra{} A1 & 900 & 10 & 49\,000 \\
+        \bottomrule
+      \end{tabular}
+      \bigskip
+
+      CD \ra{} A2 se llena en la ruta 3 ($40 + 20 + 20 = 80$): las últimas 10 van por el arco caro.
+      \bigskip
+
+      \centering \res{Z^* = \$49\,000}
+    \end{column}
+    \begin{column}{0.42\textwidth}\centering
+      \begin{tikzpicture}[x=1.3cm, y=-1.0cm]
+        \node[fuente] (F1) at (0,0.4) {F1};
+        \node[fuente] (F2) at (0,3.2) {F2};
+        \node[nodo] (CD) at (2,1.8) {CD};
+        \node[sumidero] (A1) at (4,0.4) {A1};
+        \node[sumidero] (A2) at (4,3.2) {A2};
+        \draw[gris] (F1) -- (F2);
+        \draw[gris] (A1) to[bend left=22] (A2);
+        \draw[usado] (F1) -- node[etq, font=\scriptsize\bfseries] {40} (CD);
+        \draw[usado] (F1) -- node[etq, above, font=\scriptsize\bfseries] {10} (A1);
+        \draw[usado] (F2) -- node[etq, font=\scriptsize\bfseries] {40} (CD);
+        \draw[usado] (CD) -- node[etq, font=\scriptsize\bfseries] {80} (A2);
+        \draw[usado] (A2) to[bend left=22] node[etq, left, font=\scriptsize\bfseries] {20} (A1);
+      \end{tikzpicture}
+
+      \small envíos óptimos
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% 10 --------------------------------------------------------------
+\begin{frame}{Powerco: el transporte como flujo}
+  \begin{columns}[c]
+    \begin{column}{0.47\textwidth}
+      \small Winston. 3 plantas, 4 ciudades (millones de kWh).
+      \medskip
+
+      \begin{tabular}{lccccc}
+        \toprule
+         & C1 & C2 & C3 & C4 & Oferta \\
+        \midrule
+        P1 & 8 & 6 & 10 & 9 & 35 \\
+        P2 & 9 & 12 & 13 & 7 & 50 \\
+        P3 & 14 & 9 & 16 & 5 & 40 \\
+        \midrule
+        Pide & 45 & 20 & 30 & 30 & \\
+        \bottomrule
+      \end{tabular}
+      \medskip
+
+      7 rutas; en la 5 y la 7 se \textbf{deshace} un envío.
+      \medskip
+
+      \centering \res{Z^* = \$1\,020}
+    \end{column}
+    \begin{column}{0.5\textwidth}\centering
+      \begin{tikzpicture}[x=1.1cm, y=-0.95cm]
+        \node[fuente] (P1) at (0,0.5) {P1}; \node[fuente] (P2) at (0,2) {P2};
+        \node[sumidero] (C1) at (3.4,0) {C1}; \node[sumidero] (C3) at (3.4,2.67) {C3};
+        \draw[camino] (P2) -- node[etq, pos=0.15] {$+9$} (C1);
+        \draw[regreso] (C1) -- node[etq, above] {$-8$} (P1);
+        \draw[camino] (P1) -- node[etq, pos=0.75] {$+10$} (C3);
+      \end{tikzpicture}
+
+      \small Ruta 5: P2 \ra{} C1 \ra{} P1 \ra{} C3\\
+      $9 - 8 + 10 = 11$ por unidad (15 unidades)\\[2pt]
+      P2 abastece a C1 y P1 pasa esas 15 a C3.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% 11 --------------------------------------------------------------
+\begin{frame}{Seervada: la ruta más corta como flujo}
+  \begin{columns}[c]
+    \begin{column}{0.38\textwidth}
+      \small Hillier y Lieberman. Caminos de doble vía (millas).
+      \medskip
+
+      O ofrece \textbf{1 unidad}, T la pide: la ruta de esa unidad es la más corta.
+      \medskip
+
+      Una sola ruta: O \ra{} A \ra{} B \ra{} D \ra{} T.
+      \medskip
+
+      \centering \res{\text{distancia} = 13 \text{ millas}}
+      \medskip
+
+      \raggedright\scriptsize Otra ruta de 13 (punteada): O \ra{} A \ra{} B \ra{} E \ra{} D \ra{} T.
+    \end{column}
+    \begin{column}{0.6\textwidth}\centering
+      \begin{tikzpicture}[x=1.25cm, y=-1.05cm]
+        \node[fuente, label=left:{\small $+1$}] (O) at (0,2) {O};
+        \node[nodo] (A) at (1.5,0.6) {A};
+        \node[nodo] (B) at (2,2) {B};
+        \node[nodo] (C) at (1.5,3.4) {C};
+        \node[nodo] (D) at (3.6,0.9) {D};
+        \node[nodo] (E) at (3.6,3.1) {E};
+        \node[sumidero, label=right:{\small $-1$}] (T) at (5,2) {T};
+        \foreach \u/\v/\d in {O/B/5, O/C/4, A/D/7, B/C/1, C/E/4, E/T/7}
+          \draw[gray!60] (\u) -- node[etq, text=gray] {\d} (\v);
+        \draw[very thick, dash pattern=on 3pt off 2pt] (B) -- node[etq] {3} (E);
+        \draw[very thick, dash pattern=on 3pt off 2pt] (E) -- node[etq] {1} (D);
+        \draw[camino] (O) -- node[etq] {2} (A);
+        \draw[camino] (A) -- node[etq] {2} (B);
+        \draw[camino] (B) -- node[etq] {4} (D);
+        \draw[camino] (D) -- node[etq] {5} (T);
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% 12 --------------------------------------------------------------
+\begin{frame}{La calculadora (modo 5P Costo mín.)}
+  \centering
+  \captura[0.8\textheight]{m14}
+\end{frame}
+
+% 13 --------------------------------------------------------------
+\begin{frame}{Conclusiones}
+  \begin{itemize}\setlength{\itemsep}{0.7em}
+    \item Flujo a costo mínimo: entregar todo lo pedido \textbf{gastando lo menos}, con conservación y capacidades.
+    \item Es el problema \textbf{padre}: transporte, asignación, transbordo, ruta más corta y flujo máximo.
+    \item Rutas más baratas sucesivas: cada vuelta usa la ruta más barata con espacio.
+    \item Los \textbf{tramos al revés} corrigen decisiones anteriores (Powerco).
+    \item Resultados: Powerco \$1\,020 · Distribution Unlimited \$49\,000 · Seervada 13 millas.
+    \item Verificado con la calculadora, el Simplex Revisado y javascript-lp-solver.
+  \end{itemize}
+\end{frame}
+
+% 14 --------------------------------------------------------------
+\begin{frame}{Referencias}
+  \small
+  \begin{itemize}\setlength{\itemsep}{0.6em}
+    \item Hillier, F. S. y Lieberman, G. J. \textit{Introducción a la Investigación de Operaciones}. McGraw-Hill.
+          Capítulo de modelos de optimización de redes.
+    \item Winston, W. L. \textit{Investigación de operaciones: aplicaciones y algoritmos}. Thomson.
+          Capítulo del modelo de transporte.
+    \item Ahuja, R. K., Magnanti, T. L. y Orlin, J. B. (1993). \textit{Network Flows}. Prentice Hall.
+    \item Taha, H. A. \textit{Investigación de Operaciones}. Pearson.
+  \end{itemize}
+\end{frame}
+
+\end{document}

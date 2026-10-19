@@ -1,0 +1,1070 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{estilo-libro}
+
+% ---------- Macros propias de este documento ----------
+\newcommand{\Sini}{\ensuremath{S^{*}}}
+\newcommand{\Tfin}{\ensuremath{T^{*}}}
+\newcommand{\x}[2]{x_{\mathrm{#1}\,\mathrm{#2}}}
+\newcommand{\ra}{\ensuremath{\to}}
+\tikzset{
+  regreso/.style={-{Stealth[length=2.6mm]}, line width=2.2pt, dash pattern=on 5pt off 2.5pt},
+  gris/.style={-{Stealth[length=2mm]}, thin, gray!55},
+  calle/.style={thick},
+  ofe/.style={font=\scriptsize},
+}
+
+\title{\textbf{El problema de flujo a costo mínimo}\\[4pt]\large Explicación del método y ejercicios resueltos}
+\author{Investigación de Operaciones · Asignación y flujo en redes}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+
+% =====================================================================
+\part{¿En qué consiste el problema de flujo a costo mínimo?}
+
+\section{¿Qué tipo de problema resuelve?}
+
+Muchas empresas tienen que \textbf{mover cosas} desde los lugares donde se producen hasta los lugares donde se
+necesitan: mercadería, agua, electricidad, pasajeros, mensajes. Casi siempre hay varios caminos posibles, cada
+uno con un precio distinto, y algunos caminos tienen un \textbf{límite} de lo que pueden llevar. La pregunta es
+siempre la misma: \textbf{¿por dónde mandar cada cosa para entregar todo lo que se pide gastando lo menos posible?}
+A eso se le llama el \textbf{problema de flujo a costo mínimo}.
+
+Para entenderlo usaremos un ejemplo pequeño que acompañará toda la Parte I:
+
+\begin{ojo}
+Dos panaderías, \textbf{A} y \textbf{B}, hornean cada mañana \textbf{10 cajas de pan} cada una. Dos tiendas,
+\textbf{X} y \textbf{Y}, piden \textbf{10 cajas} cada una. Llevar una caja cuesta (en soles):
+de A a X, 1; de A a Y, 3; de B a X, 2; de B a Y, 8. ¿Qué panadería debe abastecer a qué tienda para que el
+reparto salga lo más barato posible?
+\end{ojo}
+
+La primera idea que se le ocurre a cualquiera es ``usar primero lo más barato'': A le manda sus 10 cajas a X
+(cuesta 1 cada una). Pero entonces a B solo le queda la tienda Y, que es su ruta más cara (8 por caja), y el
+reparto cuesta $10 + 80 = 90$. Veremos que existe un plan mucho mejor y que el método lo encuentra solo,
+\textbf{deshaciendo} la primera decisión cuando conviene.
+
+Todo problema de flujo a costo mínimo se dibuja como una \textbf{red}: puntos (\textbf{nodos}) unidos por flechas
+(\textbf{arcos}). Hay nodos de \textbf{oferta}, que producen y llevan un número positivo (A y B: $+10$); nodos de
+\textbf{demanda}, que necesitan y llevan un número negativo (X y Y: $-10$); y, a veces, nodos de \textbf{transbordo},
+puntos de paso como un almacén, que no producen ni piden (0). Cada arco tiene un \textbf{costo por unidad} y, a veces,
+una \textbf{capacidad}. Lo que hay que decidir es el \textbf{flujo}: cuánto se manda por cada arco.
+
+% =====================================================================
+\section{Las reglas del problema}
+
+Un plan de envíos solo es válido si cumple dos reglas:
+
+\begin{description}[leftmargin=0pt, itemsep=5pt]
+  \item[Conservación (nada aparece ni desaparece).] En cada nodo,
+        \[ \text{lo que sale} - \text{lo que entra} = \text{su oferta}. \]
+        En una panadería sale lo que hornea ($+10$); en una tienda entra lo que pide (sale $-$ entra $= -10$);
+        en un nodo de transbordo sale exactamente lo que entra ($= 0$).
+  \item[Capacidad.] Por cada arco no se puede mandar más de su capacidad, ni cantidades negativas.
+\end{description}
+
+Entre todos los planes que cumplen las reglas se busca el de \textbf{menor costo total}, que es la suma de
+(costo por unidad) $\times$ (unidades enviadas) en todos los arcos. Escrito como programación lineal, con
+$x_{ij}$ = unidades que van del nodo $i$ al nodo $j$, $c_{ij}$ su costo, $u_{ij}$ su capacidad y $b_i$ la oferta del nodo $i$:
+\[
+\begin{aligned}
+\text{Min } Z &= \sum_{\text{arcos}} c_{ij}\, x_{ij}\\
+\text{s.a.}\quad \sum_{j} x_{ij} - \sum_{k} x_{ki} &= b_i \qquad \text{para cada nodo } i \quad (\text{sale} - \text{entra})\\
+0 \le x_{ij} &\le u_{ij} \qquad \text{para cada arco}
+\end{aligned}
+\]
+En el ejemplo de las panaderías:
+\[
+\begin{aligned}
+\text{Min } Z &= 1\,\x{A}{X} + 3\,\x{A}{Y} + 2\,\x{B}{X} + 8\,\x{B}{Y}\\
+\x{A}{X} + \x{A}{Y} &= 10 \nota{lo que hornea A}\\
+\x{B}{X} + \x{B}{Y} &= 10 \nota{lo que hornea B}\\
+-\x{A}{X} - \x{B}{X} &= -10 \nota{lo que pide X}\\
+-\x{A}{Y} - \x{B}{Y} &= -10 \nota{lo que pide Y}
+\end{aligned}
+\]
+
+Este modelo se podría resolver con el Simplex (por ejemplo, el Simplex Revisado del primer previo), pero la forma
+de red permite un método mucho más directo, que se explica a continuación. Hay además un regalo:
+\textbf{si las ofertas, las demandas y las capacidades son números enteros, la mejor solución también sale con
+números enteros}. Nunca hará falta mandar ``media caja''.
+
+% =====================================================================
+\section{El problema ``padre'': sus casos particulares}
+
+El flujo a costo mínimo es el problema más general de los que se ven en este curso: muchos problemas conocidos
+son el mismo problema con datos especiales. Por eso, un solo método sirve para todos ellos.
+
+\begin{center}\small
+\begin{tabular}{p{2.9cm}p{7.1cm}p{4.2cm}}
+\toprule
+\textbf{Problema} & \textbf{Cómo se ve como flujo a costo mínimo} & \textbf{En este documento} \\
+\midrule
+Transporte & Solo nodos de oferta y de demanda; un arco directo de cada origen a cada destino, sin capacidad. & Ejercicio 1 (Powerco) \\
+Asignación & Un transporte donde cada persona ofrece 1 y cada tarea pide 1. & tema de asignación \\
+Transbordo & Hay nodos de paso (oferta 0) por los que la mercadería puede pasar antes de llegar. & Ejercicio 2 \\
+Ruta más corta & El origen ofrece 1 unidad, el destino pide 1, y el costo de cada arco es su distancia. La
+                 ruta por donde viaja esa unidad es la más corta. & Ejercicio 3 (Seervada) \\
+Flujo máximo & Los arcos cuestan 0 y se agrega un atajo de la fuente al destino carísimo y sin límite. Se pide mandar
+               una cantidad enorme: para gastar poco, el método mete por la red todo lo que cabe (el flujo máximo). & tema de flujo máximo \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =====================================================================
+\section{La idea del método: rutas más baratas sucesivas}
+
+El método que usamos se llama \textbf{rutas más baratas sucesivas} (en los libros, \emph{caminos más cortos
+sucesivos}). La idea es la de un despachador sensato:
+
+\begin{enumerate}[itemsep=3pt]
+  \item Busca, entre todos los caminos que todavía tienen espacio, \textbf{la ruta más barata} desde algún punto que
+        aún tiene producto hasta algún punto que aún lo necesita.
+  \item Manda por ella \textbf{todo lo que se pueda}, hasta que algo se agote: la oferta que queda, lo que falta
+        por entregar o el espacio de algún tramo.
+  \item Repite hasta que \textbf{todo lo pedido esté entregado}.
+\end{enumerate}
+
+Lo que hace que el método no se equivoque es un detalle: \textbf{también puede deshacer envíos anteriores}. Si
+antes se mandó algo por un arco, ahora se permite recorrer ese arco al revés, y hacerlo \textbf{resta} su costo,
+porque significa ``ya no mando eso por ahí''. En el ejemplo:
+
+\begin{center}
+\begin{tikzpicture}[x=1.15cm, y=1.15cm]
+  \begin{scope}
+    \node[fuente, label=left:{\small $+10$}] (A) at (0,0) {A};
+    \node[fuente, label=left:{\small $+10$}] (B) at (0,-2) {B};
+    \node[sumidero, label=right:{\small $-10$}] (X) at (3,0) {X};
+    \node[sumidero, label=right:{\small $-10$}] (Y) at (3,-2) {Y};
+    \draw[arco] (A) -- node[etq, above] {1} (X);
+    \draw[arco] (A) -- node[etq, pos=0.25] {3} (Y);
+    \draw[arco] (B) -- node[etq, pos=0.25] {2} (X);
+    \draw[arco] (B) -- node[etq, below] {8} (Y);
+    \node[font=\small\bfseries] at (1.5,-3) {La red (costo por caja)};
+  \end{scope}
+  \begin{scope}[xshift=5.6cm]
+    \node[fuente] (A) at (0,0) {A};
+    \node[fuente] (B) at (0,-2) {B};
+    \node[sumidero] (X) at (3,0) {X};
+    \node[sumidero] (Y) at (3,-2) {Y};
+    \draw[camino] (A) -- node[etq, above] {$+1$} (X);
+    \draw[gris] (A) -- (Y); \draw[gris] (B) -- (X); \draw[gris] (B) -- (Y);
+    \node[font=\small\bfseries, align=center] at (1.5,-3.2) {Ruta 1: A $\to$ X\\[-1pt]\footnotesize 10 cajas a 1 = 10};
+  \end{scope}
+  \begin{scope}[xshift=11.2cm]
+    \node[fuente] (A) at (0,0) {A};
+    \node[fuente] (B) at (0,-2) {B};
+    \node[sumidero] (X) at (3,0) {X};
+    \node[sumidero] (Y) at (3,-2) {Y};
+    \draw[gris] (B) -- (Y);
+    \draw[camino] (B) -- node[etq, pos=0.22] {$+2$} (X);
+    \draw[regreso] (X) -- node[etq, above] {$-1$} (A);
+    \draw[camino] (A) -- node[etq, pos=0.22] {$+3$} (Y);
+    \node[font=\small\bfseries, align=center] at (1.5,-3.2) {Ruta 2: B $\to$ X $\to$ A $\to$ Y\\[-1pt]\footnotesize 10 cajas a $2-1+3 = 4$ = 40};
+  \end{scope}
+\end{tikzpicture}
+\end{center}
+
+La ruta 2 se lee así: B le manda 10 cajas a X (cuesta 2 cada una); como X ya tenía las cajas de A, A deja de
+mandárselas (ahorra 1 cada una, por eso el tramo punteado \textbf{al revés} vale $-1$); y A usa esas 10 cajas para
+abastecer a Y (cuesta 3). Al final A abastece a Y y B a X: el reparto cuesta $10 + 40 = 50$, en lugar de 90.
+Nadie mandó cajas ``hacia atrás'': simplemente \textbf{se corrigió el plan}.
+
+% =====================================================================
+\section{Antes de empezar: preparar el problema}
+
+\begin{description}[leftmargin=0pt, itemsep=5pt]
+  \item[Revisar si está balanceado.] Se suma lo que se ofrece y lo que se pide. Si son iguales, se sigue.
+        Si se ofrece más de lo que se pide, se agrega un \textbf{destino ficticio} que ``pide'' el sobrante, con costo 0
+        desde cada origen: lo que se ``manda'' ahí es lo que en realidad se queda en casa. Si se pide más de lo que se
+        ofrece, se agrega un \textbf{origen ficticio} que ``ofrece'' lo que falta: lo que sale de él es demanda que se
+        queda sin atender.
+  \item[Juntar las ofertas y las demandas.] Para buscar una sola ruta a la vez, se agrega un \textbf{punto inicial
+        \Sini} con un arco de costo 0 hacia cada nodo de oferta, cuyo espacio es lo que ese nodo ofrece; y un
+        \textbf{punto final \Tfin} con un arco de costo 0 desde cada nodo de demanda, cuyo espacio es lo que ese nodo
+        pide. Así, ``ir de \Sini{} a \Tfin'' significa ``llevar algo de quien tiene a quien necesita''.
+  \item[Arcos en los dos sentidos.] Si una conexión se puede usar en ambos sentidos (una calle de doble vía), se
+        dibujan dos arcos, uno de ida y uno de vuelta, con el mismo costo.
+\end{description}
+
+En el ejemplo, se ofrecen $10 + 10 = 20$ cajas y se piden $10 + 10 = 20$: está balanceado. La red preparada queda:
+
+\begin{center}
+\begin{tikzpicture}[x=1.4cm, y=0.8cm]
+  \node[nodo] (S) at (0,-1) {\Sini};
+  \node[fuente] (A) at (2,0) {A};
+  \node[fuente] (B) at (2,-2) {B};
+  \node[sumidero] (X) at (5,0) {X};
+  \node[sumidero] (Y) at (5,-2) {Y};
+  \node[nodo] (T) at (7,-1) {\Tfin};
+  \draw[arco, dashed] (S) -- node[etq, above left] {0; hasta 10} (A);
+  \draw[arco, dashed] (S) -- node[etq, below left] {0; hasta 10} (B);
+  \draw[arco] (A) -- node[etq, above] {1} (X);
+  \draw[arco] (A) -- node[etq, pos=0.25] {3} (Y);
+  \draw[arco] (B) -- node[etq, pos=0.25] {2} (X);
+  \draw[arco] (B) -- node[etq, below] {8} (Y);
+  \draw[arco, dashed] (X) -- node[etq, above right] {0; hasta 10} (T);
+  \draw[arco, dashed] (Y) -- node[etq, below right] {0; hasta 10} (T);
+\end{tikzpicture}
+\end{center}
+
+% =====================================================================
+\section{Las palabras que se usan}
+
+\begin{center}\small
+\begin{tabular}{p{3.6cm}p{10.6cm}}
+\toprule
+\textbf{Término} & \textbf{Qué significa} \\
+\midrule
+Oferta $b_i$ & Lo que produce un nodo (positivo). Si es negativo, es lo que pide (demanda). Si es 0, es de transbordo. \\
+Costo por unidad $c_{ij}$ & Lo que cuesta mandar una unidad por el arco de $i$ a $j$. \\
+Capacidad $u_{ij}$ & Lo máximo que puede llevar un arco. Si no se indica, no tiene límite ($\infty$). \\
+Balanceado & Cuando lo ofrecido es igual a lo pedido. Si no, se agrega un nodo ficticio. \\
+\Sini{} y \Tfin & El punto inicial que reúne todas las ofertas y el punto final que reúne todas las demandas. \\
+Red de lo que queda & La red con el \textbf{espacio libre} de cada arco en el momento actual. Los libros la llaman
+                      \emph{red residual}. \\
+Tramo al revés & Si un arco ya lleva flujo, se puede recorrer en sentido contrario para \textbf{deshacer} parte de ese
+                 envío. Su costo es el del arco \textbf{con signo menos}, y su espacio es lo que el arco lleva. \\
+Ruta más barata & El camino de \Sini{} a \Tfin{} en la red de lo que queda cuya suma de costos es la menor. \\
+Tramo más limitado & El tramo de la ruta con menos espacio: decide cuánto se puede enviar (el ``cuello de botella''). \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =====================================================================
+\section{Los pasos del método}\label{sec:algoritmo}
+
+Cada iteración responde cuatro preguntas, siempre en el mismo orden. Para que se entiendan, se muestra lo que
+ocurre en el ejemplo de las panaderías.
+
+\paso{Paso 1. ¿Cuánto espacio queda en cada arco?}
+Se dibuja la red de lo que queda. Por cada arco de $i$ a $j$ que lleva $x_{ij}$ unidades:
+\begin{itemize}[itemsep=2pt]
+  \item hacia adelante quedan $u_{ij} - x_{ij}$ unidades de espacio, con costo $+c_{ij}$;
+  \item si $x_{ij} > 0$, aparece un tramo al revés, de $j$ a $i$, con espacio $x_{ij}$ y costo $-c_{ij}$.
+\end{itemize}
+Los arcos que salen de \Sini{} tienen como espacio lo que a cada origen \textbf{le queda} por mandar, y los que llegan a
+\Tfin{}, lo que a cada destino \textbf{le falta} recibir.
+
+\textit{En el ejemplo:} al inicio no se ha mandado nada, así que la red de lo que queda es la red original:
+a A y a B les quedan 10 cajas, a X y a Y les faltan 10.
+
+\paso{Paso 2. ¿Cuál es la ruta más barata?}
+Se busca la ruta de \Sini{} a \Tfin{} con menor suma de costos, usando solo tramos con espacio. Como los tramos al
+revés tienen costo negativo, se usa un procedimiento que los admite (el de \textbf{Bellman-Ford}): se anota 0 en
+\Sini{} y ``infinito'' en los demás puntos; se revisan todos los tramos y, si llegar a $i$ cuesta $d_i$ y el tramo de
+$i$ a $j$ cuesta $c$, entonces a $j$ se puede llegar con $d_i + c$; si eso es menor que lo anotado en $j$, se
+corrige. Se repite la revisión hasta que ya nada cambie. Lo anotado en \Tfin{} es el costo de la ruta más barata.
+
+\textit{En el ejemplo:} las cuatro rutas posibles cuestan 1, 3, 2 y 8. La más barata es \Sini{} \ra{} A \ra{} X \ra{} \Tfin,
+con costo 1 por caja.
+
+\paso{Paso 3. ¿Cuánto se envía?}
+Lo que permita el tramo más limitado de la ruta: el \textbf{menor espacio} entre todos sus tramos (incluidos lo que le
+queda al origen y lo que le falta al destino).
+
+\textit{En el ejemplo:} $\min(10,\ \infty,\ 10) = 10$: a A le quedan 10, el arco A \ra{} X no tiene límite y a X le
+faltan 10. Se mandan 10 cajas.
+
+\paso{Paso 4. Enviar y anotar}
+Se suma el envío al flujo de cada arco de la ruta (y, si un tramo iba al revés, se \textbf{resta} del arco original).
+El costo de la iteración es (costo por unidad) $\times$ (envío) y se suma al acumulado. Si todavía falta entregar algo,
+se vuelve al paso 1.
+
+\textit{En el ejemplo:} A \ra{} X lleva 10 cajas; costo $1 \times 10 = 10$, acumulado 10. Faltan las 10 cajas de Y,
+así que se da otra vuelta.
+
+\paso{Segunda vuelta del ejemplo: aquí aparece el tramo al revés}
+Paso 1: a A ya no le queda nada y X ya está completa. Pero como A \ra{} X lleva 10, en la red de lo que queda
+existe el tramo al revés X \ra{} A con espacio 10 y costo $-1$.
+
+Paso 2: a B le quedan 10 y a Y le faltan 10. Hay dos rutas:
+\[
+\text{B} \to \text{Y}: \ 8 \qquad\qquad \text{B} \to \text{X} \to \text{A} \to \text{Y}: \ 2 - 1 + 3 = \mathbf{4}
+\nota{la más barata}
+\]
+Paso 3: $\min(10,\ \infty,\ 10,\ \infty,\ 10) = 10$. \quad
+Paso 4: costo $4 \times 10 = 40$, acumulado $10 + 40 = 50$. Al recorrer X \ra{} A al revés, el arco A \ra{} X
+\textbf{baja} de 10 a 0. El plan final es A \ra{} Y: 10 y B \ra{} X: 10, con costo $3(10) + 2(10) = 50$. Ya se entregó
+todo: se terminó.
+
+\noindent
+\begin{minipage}[c]{0.50\textwidth}
+\begin{idea}[Resumen de los pasos]
+\begin{enumerate}[leftmargin=*, itemsep=3pt]
+  \item[\textbf{0.}] Preparar: balancear (nodo ficticio si hace falta) y agregar \Sini{} y \Tfin. Todos los flujos en 0.
+  \item \textbf{Red de lo que queda:} espacio libre de cada arco ($+c$) y tramos al revés de lo ya enviado ($-c$).
+  \item \textbf{Ruta más barata} de \Sini{} a \Tfin{} (Bellman-Ford, porque hay costos negativos).
+  \item \textbf{Envío} = el menor espacio de la ruta.
+  \item \textbf{Enviar y anotar:} actualizar flujos y costo acumulado. Si falta entregar algo, volver al paso 1.
+\end{enumerate}
+\end{idea}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.47\textwidth}\centering
+\begin{tikzpicture}[scale=0.78, transform shape, node distance=4mm and 6mm, >=Stealth,
+  caja/.style={draw, rounded corners=2pt, fill=gray!8, align=center, minimum width=4.4cm, inner sep=5pt, font=\small},
+  decision/.style={draw, diamond, aspect=2.4, fill=gray!18, align=center, inner sep=1pt, font=\small},
+  fin/.style={draw, rounded corners=8pt, fill=gray!25, align=center, minimum width=2.2cm, inner sep=5pt, font=\small}]
+  \node[caja] (ini) {Preparar: balancear,\\ agregar \Sini{} y \Tfin};
+  \node[decision, below=of ini] (falta) {¿Falta entregar\\ algo?};
+  \node[fin, right=of falta] (optimo) {\textbf{Solución}\\\textbf{óptima}};
+  \node[caja, below=of falta] (resid) {1. Red de lo que queda\\ (con tramos al revés)};
+  \node[decision, below=of resid] (hay) {¿Hay ruta de\\ \Sini{} a \Tfin?};
+  \node[fin, right=of hay] (infact) {\textbf{Sin}\\\textbf{solución}};
+  \node[caja, below=of hay] (envia) {2--4. Ruta más barata,\\ envío = menor espacio,\\ sumar al acumulado};
+  \draw[->] (ini) -- (falta);
+  \draw[->] (falta) -- node[above, font=\scriptsize] {no} (optimo);
+  \draw[->] (falta) -- node[right, font=\scriptsize] {sí} (resid);
+  \draw[->] (resid) -- (hay);
+  \draw[->] (hay) -- node[above, font=\scriptsize] {no} (infact);
+  \draw[->] (hay) -- node[right, font=\scriptsize] {sí} (envia);
+  \draw[->] (envia.west) -- ++(-0.9,0) |- node[pos=0.25, left, font=\scriptsize, align=center] {siguiente\\iteración} (falta.west);
+\end{tikzpicture}
+\end{minipage}
+
+% =====================================================================
+\section{¿Cómo se sabe que terminó?}
+
+\begin{description}[leftmargin=0pt, itemsep=5pt]
+  \item[Solución óptima.] Ya se entregó todo lo pedido (los arcos que llegan a \Tfin{} están llenos). Como en cada
+        vuelta se usó la ruta más barata disponible, el plan final es el más barato posible. Una forma de
+        comprobarlo: en la red de lo que queda \textbf{no hay ningún recorrido circular con costo negativo}; si lo
+        hubiera, se podría dar esa vuelta y ahorrar.
+  \item[Problema sin solución.] Todavía falta entregar algo, pero no existe ninguna ruta con espacio de \Sini{} a \Tfin:
+        las capacidades no alcanzan para cubrir lo pedido.
+  \item[Problema sin límite.] Si hubiera un recorrido circular de costo negativo y sin límite de capacidad, se podría
+        ahorrar sin fin. Con costos positivos (distancias, fletes) esto no ocurre; suele indicar un error en los datos.
+  \item[Empates.] Si dos rutas cuestan lo mismo, se puede tomar cualquiera: el costo final es el mismo, aunque los
+        envíos pueden quedar distintos (hay \textbf{varias soluciones óptimas}). Pasa en los ejercicios 1 y 3.
+\end{description}
+
+% =====================================================================
+\section{Ventajas y desventajas}
+
+\begin{center}\small
+\begin{tabular}{p{7.2cm}p{7.2cm}}
+\toprule
+\textbf{Ventajas} & \textbf{Desventajas} \\
+\midrule
+\begin{itemize}[leftmargin=*, itemsep=2pt, topsep=2pt]
+  \item Es intuitivo: siempre se usa la ruta más barata que queda.
+  \item Corrige solo sus decisiones anteriores con los tramos al revés.
+  \item Con datos enteros, los envíos salen enteros.
+  \item Sirve para todos los casos particulares: transporte, transbordo, ruta más corta, flujo máximo.
+  \item Cada iteración se puede revisar a mano en el dibujo.
+\end{itemize}
+&
+\begin{itemize}[leftmargin=*, itemsep=2pt, topsep=2pt]
+  \item Hay que redibujar la red de lo que queda en cada vuelta y no olvidar los tramos al revés.
+  \item Buscar la ruta más barata con costos negativos (Bellman-Ford) es laborioso a mano en redes grandes.
+  \item El número de vueltas puede crecer cuando las cantidades son grandes y hay muchos cuellos de botella.
+\end{itemize}
+\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Otro método: el símplex de redes.} Hillier y Lieberman resuelven este problema con el \textbf{método símplex de
+redes}, que es el Simplex de siempre adaptado a la forma de la red (cada solución básica es un ``árbol'' de arcos). Es
+el método que usan los programas comerciales para redes enormes. Llega al \textbf{mismo costo mínimo}; lo que cambia
+es el camino para llegar. Aquí usamos rutas más baratas porque cada paso se ve en el dibujo.
+
+% =====================================================================
+\part{Ejercicios resueltos}
+\setcounter{section}{0}
+
+Los tres ejercicios siguientes aplican, uno por uno, los pasos de la sección~\ref{sec:algoritmo}. Las rutas y los
+números son exactamente los que muestra la calculadora (modo \textsc{5P Costo mín.}, memorias 13, 14 y 15).
+
+% =====================================================================
+\section{Powerco: el transporte como flujo a costo mínimo}
+\textit{Fuente: Winston, Investigación de operaciones: aplicaciones y algoritmos, capítulo del modelo de transporte.}
+
+\subsection*{Planteamiento del problema}
+Powerco tiene \textbf{tres plantas eléctricas} que abastecen a \textbf{cuatro ciudades}. Cada planta puede generar
+una cantidad de energía (en millones de kWh) y cada ciudad necesita una cantidad. Mandar un millón de kWh de una planta
+a una ciudad tiene un costo (en dólares) que depende de la distancia. Como red, cada planta es un nodo de oferta, cada
+ciudad un nodo de demanda y hay un arco de cada planta a cada ciudad (ninguno tiene límite).
+
+\noindent
+\begin{minipage}[c]{0.44\textwidth}\small\centering
+\begin{tabular}{lccccc}
+\toprule
+ & \textbf{C1} & \textbf{C2} & \textbf{C3} & \textbf{C4} & \textbf{Oferta} \\
+\midrule
+Planta 1 & 8  & 6  & 10 & 9  & 35 \\
+Planta 2 & 9  & 12 & 13 & 7  & 50 \\
+Planta 3 & 14 & 9  & 16 & 5  & 40 \\
+\midrule
+Demanda  & 45 & 20 & 30 & 30 & \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.54\textwidth}\centering
+\begin{tikzpicture}[x=1.85cm, y=-1.3cm]
+  \node[fuente, label=left:{\small $+35$}] (P1) at (0,0.5) {P1};
+  \node[fuente, label=left:{\small $+50$}] (P2) at (0,2) {P2};
+  \node[fuente, label=left:{\small $+40$}] (P3) at (0,3.5) {P3};
+  \node[sumidero, label=right:{\small $-45$}] (C1) at (3.4,0) {C1};
+  \node[sumidero, label=right:{\small $-20$}] (C2) at (3.4,1.33) {C2};
+  \node[sumidero, label=right:{\small $-30$}] (C3) at (3.4,2.67) {C3};
+  \node[sumidero, label=right:{\small $-30$}] (C4) at (3.4,4) {C4};
+  \foreach \p/\c/\k in {P1/C1/8, P1/C2/6, P1/C3/10, P1/C4/9, P2/C1/9, P2/C2/12, P2/C3/13, P2/C4/7,
+                        P3/C1/14, P3/C2/9, P3/C3/16, P3/C4/5}
+    \draw[arco] (\p) -- node[etq, pos=0.26] {\k} (\c);
+\end{tikzpicture}
+\end{minipage}
+
+La pregunta: \textbf{¿cuánta energía debe mandar cada planta a cada ciudad para cubrir todas las demandas al menor costo?}
+
+\subsection*{Formulación del modelo}
+Sea $x_{ij}$ = millones de kWh que la planta $i$ manda a la ciudad $j$ (12 variables, una por arco). Cada arco aporta
+(costo por unidad) $\times$ (lo enviado). En la columna izquierda, lo que \textbf{sale} de cada planta es su oferta; en la
+derecha, lo que \textbf{entra} a cada ciudad es su demanda (en la forma de red: sale $-$ entra $= -$demanda).
+\[
+\begin{aligned}
+\text{Min } Z = {}& 8x_{11} + 6x_{12} + 10x_{13} + 9x_{14} + 9x_{21} + 12x_{22} + 13x_{23} + 7x_{24}\\
+                  & + 14x_{31} + 9x_{32} + 16x_{33} + 5x_{34}\\[3pt]
+\text{s.a.}\quad & x_{11} + x_{12} + x_{13} + x_{14} = 35 && x_{11} + x_{21} + x_{31} = 45\\
+& x_{21} + x_{22} + x_{23} + x_{24} = 50 && x_{12} + x_{22} + x_{32} = 20\\
+& x_{31} + x_{32} + x_{33} + x_{34} = 40 && x_{13} + x_{23} + x_{33} = 30\\
+& x_{ij} \ge 0 && x_{14} + x_{24} + x_{34} = 30
+\end{aligned}
+\]
+Este es el clásico \textbf{modelo de transporte}: un flujo a costo mínimo sin nodos de paso y sin capacidades.
+
+\subsection*{Preparación}
+Se ofrecen $35 + 50 + 40 = 125$ y se piden $45 + 20 + 30 + 30 = 125$: \textbf{está balanceado}, no hace falta nodo
+ficticio. Se agrega \Sini{} con arcos a P1, P2 y P3 (espacio 35, 50 y 40) y \Tfin{} con arcos desde C1, \dots, C4
+(espacio 45, 20, 30 y 30), todos de costo 0. Al inicio nada se ha enviado: costo acumulado 0.
+
+% ---------------------------------------------------------------------
+\subsection*{Las rutas, una por una}
+
+En las cuatro primeras vueltas la ruta más barata es un arco directo. Dentro del mínimo van, en orden, lo que le
+queda a la planta, el espacio del arco ($\infty$: no tiene límite) y lo que le falta a la ciudad.
+
+\noindent
+\begin{minipage}[t]{0.49\textwidth}
+\paso{Ruta 1: \ P3 $\to$ C4}
+$\begin{aligned}
+\text{por unidad} &= 5 \nota{el arco más barato}\\
+\text{envío} &= \min(40, \infty, 30) = 30 \nota{C4 llena}\\
+\text{costo} &= 5 \times 30 = 150 \nota{acumulado 150}
+\end{aligned}$
+\end{minipage}\hfill
+\begin{minipage}[t]{0.49\textwidth}
+\paso{Ruta 2: \ P1 $\to$ C2}
+$\begin{aligned}
+\text{por unidad} &= 6\\
+\text{envío} &= \min(35, \infty, 20) = 20 \nota{C2 llena}\\
+\text{costo} &= 6 \times 20 = 120 \nota{acumulado 270}
+\end{aligned}$
+\end{minipage}
+
+\noindent
+\begin{minipage}[t]{0.49\textwidth}
+\paso{Ruta 3: \ P1 $\to$ C1}
+$\begin{aligned}
+\text{por unidad} &= 8\\
+\text{envío} &= \min(15, \infty, 45) = 15 \nota{P1 vacía}\\
+\text{costo} &= 8 \times 15 = 120 \nota{acumulado 390}
+\end{aligned}$
+\end{minipage}\hfill
+\begin{minipage}[t]{0.49\textwidth}
+\paso{Ruta 4: \ P2 $\to$ C1}
+$\begin{aligned}
+\text{por unidad} &= 9 \nota{C4 ya está llena}\\
+\text{envío} &= \min(50, \infty, 30) = 30 \nota{C1 llena}\\
+\text{costo} &= 9 \times 30 = 270 \nota{acumulado 660}
+\end{aligned}$
+\end{minipage}
+
+\medskip
+Ahora C1, C2 y C4 están completas. Solo falta C3, que pide 30; a P2 le quedan 20 y a P3 le quedan 10.
+
+\paso{Ruta 5: \ P2 $\to$ C1 $\to$ P1 $\to$ C3 \quad (primera vez que se deshace un envío)}
+Las rutas directas a C3 son caras: P2 \ra{} C3 cuesta 13 y P3 \ra{} C3 cuesta 16. Pero P1 \ra{} C3 cuesta solo 10, y
+aunque a P1 ya no le queda energía, sí está mandando 15 a C1. En la red de lo que queda existe el tramo al revés
+C1 \ra{} P1, con espacio 15 y costo $-8$. La ruta más barata lo aprovecha:
+\begin{align*}
+\text{costo por unidad} &= 9 - 8 + 10 = 11 \nota{el tramo al revés resta su costo}\\
+\text{envío} &= \min(20,\ \infty,\ 15,\ \infty,\ 30) = 15 \nota{solo se pueden deshacer las 15 de P1 a C1}\\
+\text{costo} &= 11 \times 15 = 165, \qquad \text{acumulado} = 825 \nota{van 110 de 125}
+\end{align*}
+
+\begin{ojo}
+\textbf{¿Qué significa recorrer C1 \ra{} P1 al revés?} Que P2 le manda a C1 \textbf{15 unidades más} (cuesta 9 cada una);
+como C1 ya estaba completa, P1 \textbf{deja de mandarle} esas 15 (ahorra 8 cada una); y P1 usa esa energía para
+abastecer a C3 (cuesta 10 cada una). C1 sigue recibiendo 45 y C3 recibe 15. El cambio neto cuesta
+$9 - 8 + 10 = 11$ por unidad, más barato que cualquier envío directo a C3.
+
+\begin{center}
+\begin{tikzpicture}[x=1.15cm, y=-1.0cm]
+  \begin{scope}
+    \node[fuente] (P1) at (0,0.5) {P1}; \node[fuente] (P2) at (0,2) {P2};
+    \node[sumidero] (C1) at (3.4,0) {C1}; \node[sumidero] (C3) at (3.4,2.67) {C3};
+    \draw[usado] (P1) -- node[etq, above] {15} (C1);
+    \draw[usado] (P2) -- node[etq, pos=0.15] {30} (C1);
+    \node[font=\small\bfseries] at (1.7,3.5) {Antes (lo enviado)};
+  \end{scope}
+  \begin{scope}[xshift=5.4cm]
+    \node[fuente] (P1) at (0,0.5) {P1}; \node[fuente] (P2) at (0,2) {P2};
+    \node[sumidero] (C1) at (3.4,0) {C1}; \node[sumidero] (C3) at (3.4,2.67) {C3};
+    \draw[camino] (P2) -- node[etq, pos=0.15] {$+9$} (C1);
+    \draw[regreso] (C1) -- node[etq, above] {$-8$} (P1);
+    \draw[camino] (P1) -- node[etq, pos=0.75] {$+10$} (C3);
+    \node[font=\small\bfseries] at (1.7,3.5) {Ruta 5 (15 unidades)};
+  \end{scope}
+  \begin{scope}[xshift=10.8cm]
+    \node[fuente] (P1) at (0,0.5) {P1}; \node[fuente] (P2) at (0,2) {P2};
+    \node[sumidero] (C1) at (3.4,0) {C1}; \node[sumidero] (C3) at (3.4,2.67) {C3};
+    \draw[gris, dotted] (P1) -- node[etq, above, text=gray] {0} (C1);
+    \draw[usado] (P2) -- node[etq, pos=0.15] {45} (C1);
+    \draw[usado] (P1) -- node[etq, pos=0.75] {15} (C3);
+    \node[font=\small\bfseries] at (1.7,3.5) {Después};
+  \end{scope}
+\end{tikzpicture}
+\end{center}
+El tramo punteado grueso es el que se recorre al revés. Después de la ruta 5, P1 \ra{} C1 queda en 0.
+\end{ojo}
+
+\paso{Ruta 6: \ P2 $\to$ C3}
+A C3 le faltan 15; a P2 le quedan 5 y a P3, 10.
+\begin{align*}
+\text{costo por unidad} &= 13 \nota{empate: P3 \ra{} C2 \ra{} P1 \ra{} C3 también cuesta 13}\\
+\text{envío} &= \min(5,\ \infty,\ 15) = 5 \nota{a P2 solo le quedan 5}\\
+\text{costo} &= 13 \times 5 = 65, \qquad \text{acumulado} = 890 \nota{van 115 de 125}
+\end{align*}
+Hay dos rutas de 13 y se toma una de ellas; la otra se usa en la vuelta siguiente. P2 queda sin energía.
+
+\paso{Ruta 7: \ P3 $\to$ C2 $\to$ P1 $\to$ C3 \quad (otra vez se deshace un envío)}
+Solo a P3 le queda energía (10) y solo a C3 le falta (10). Ir directo de P3 a C3 cuesta 16; es más barato que P3
+abastezca a C2 y que P1 cambie parte de lo que mandaba a C2 hacia C3.
+\begin{align*}
+\text{costo por unidad} &= 9 - 6 + 10 = 13 \nota{C2 \ra{} P1 deshace P1 \ra{} C2: ahorra 6}\\
+\text{envío} &= \min(10,\ \infty,\ 20,\ \infty,\ 10) = 10 \nota{a P3 le quedan 10; a C3 le faltan 10}\\
+\text{costo} &= 13 \times 10 = 130, \qquad \text{acumulado} = 1\,020 \nota{van 125 de 125: terminado}
+\end{align*}
+
+\begin{center}
+\begin{tikzpicture}[x=1.15cm, y=-1.0cm]
+  \begin{scope}
+    \node[fuente] (P1) at (0,0.5) {P1}; \node[fuente] (P3) at (0,3.5) {P3};
+    \node[sumidero] (C2) at (3.4,1.33) {C2}; \node[sumidero] (C3) at (3.4,2.67) {C3};
+    \draw[usado] (P1) -- node[etq, pos=0.4] {20} (C2);
+    \draw[usado] (P1) -- node[etq, pos=0.75] {15} (C3);
+    \node[font=\small\bfseries] at (1.7,4.3) {Antes (lo enviado)};
+  \end{scope}
+  \begin{scope}[xshift=5.4cm]
+    \node[fuente] (P1) at (0,0.5) {P1}; \node[fuente] (P3) at (0,3.5) {P3};
+    \node[sumidero] (C2) at (3.4,1.33) {C2}; \node[sumidero] (C3) at (3.4,2.67) {C3};
+    \draw[camino] (P3) -- node[etq, pos=0.2] {$+9$} (C2);
+    \draw[regreso] (C2) -- node[etq, pos=0.4, above] {$-6$} (P1);
+    \draw[camino] (P1) -- node[etq, pos=0.86] {$+10$} (C3);
+    \node[font=\small\bfseries] at (1.7,4.3) {Ruta 7 (10 unidades)};
+  \end{scope}
+  \begin{scope}[xshift=10.8cm]
+    \node[fuente] (P1) at (0,0.5) {P1}; \node[fuente] (P3) at (0,3.5) {P3};
+    \node[sumidero] (C2) at (3.4,1.33) {C2}; \node[sumidero] (C3) at (3.4,2.67) {C3};
+    \draw[usado] (P1) -- node[etq, pos=0.4] {10} (C2);
+    \draw[usado] (P1) -- node[etq, pos=0.86] {25} (C3);
+    \draw[usado] (P3) -- node[etq, pos=0.2] {10} (C2);
+    \node[font=\small\bfseries] at (1.7,4.3) {Después};
+  \end{scope}
+\end{tikzpicture}
+\end{center}
+
+\paso{Resumen de las siete rutas}
+\begin{center}\small
+\begin{tabular}{clcccc}
+\toprule
+\textbf{Ruta} & \textbf{Recorrido} & \textbf{Costo por unidad} & \textbf{Envío} & \textbf{Costo} & \textbf{Acumulado} \\
+\midrule
+1 & P3 \ra{} C4 & 5 & 30 & 150 & 150 \\
+2 & P1 \ra{} C2 & 6 & 20 & 120 & 270 \\
+3 & P1 \ra{} C1 & 8 & 15 & 120 & 390 \\
+4 & P2 \ra{} C1 & 9 & 30 & 270 & 660 \\
+5 & P2 \ra{} C1 \ra{} P1 \ra{} C3 & $9 - 8 + 10 = 11$ & 15 & 165 & 825 \\
+6 & P2 \ra{} C3 & 13 & 5 & 65 & 890 \\
+7 & P3 \ra{} C2 \ra{} P1 \ra{} C3 & $9 - 6 + 10 = 13$ & 10 & 130 & 1\,020 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Fíjate en que el costo por unidad de las rutas \textbf{nunca baja}: 5, 6, 8, 9, 11, 13, 13. Cada vuelta usa la ruta más
+barata que queda, y las baratas se van agotando.
+
+\subsection*{Resultado}
+\[
+\res{\text{Costo mínimo } Z^* = \$1\,020}
+\]
+\noindent
+\begin{minipage}[c]{0.42\textwidth}\small\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Arco} & \textbf{Envío} & \textbf{Precio} & \textbf{Costo} \\
+\midrule
+P1 \ra{} C2 & 10 & 6  & 60 \\
+P1 \ra{} C3 & 25 & 10 & 250 \\
+P2 \ra{} C1 & 45 & 9  & 405 \\
+P2 \ra{} C3 & 5  & 13 & 65 \\
+P3 \ra{} C2 & 10 & 9  & 90 \\
+P3 \ra{} C4 & 30 & 5  & 150 \\
+\midrule
+\textbf{Total} & 125 & & \textbf{1\,020} \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.56\textwidth}\small
+Los otros seis arcos llevan 0. Es la misma solución óptima que reporta Winston ($x_{12} = 10$, $x_{13} = 25$,
+$x_{21} = 45$, $x_{23} = 5$, $x_{32} = 10$, $x_{34} = 30$).
+
+\textbf{Comprobación (conservación en cada nodo):}
+\begin{itemize}[itemsep=1pt, leftmargin=*]
+  \item Sale: P1 $10 + 25 = 35$, P2 $45 + 5 = 50$, P3 $10 + 30 = 40$ \checkmark
+  \item Entra: C1 $45$, C2 $10 + 10 = 20$, C3 $25 + 5 = 30$, C4 $30$ \checkmark
+  \item Capacidades: ningún arco tiene límite \checkmark
+  \item Costo: $60 + 250 + 405 + 65 + 90 + 150 = 1\,020$ \checkmark
+\end{itemize}
+\end{minipage}
+
+\subsection*{Interpretación gráfica}
+\noindent
+\begin{minipage}[c]{0.46\textwidth}\centering
+\begin{tikzpicture}[x=1.5cm, y=-1.25cm]
+  \node[fuente, label=left:{\small $+35$}] (P1) at (0,0.5) {P1};
+  \node[fuente, label=left:{\small $+50$}] (P2) at (0,2) {P2};
+  \node[fuente, label=left:{\small $+40$}] (P3) at (0,3.5) {P3};
+  \node[sumidero, label=right:{\small $-45$}] (C1) at (3.4,0) {C1};
+  \node[sumidero, label=right:{\small $-20$}] (C2) at (3.4,1.33) {C2};
+  \node[sumidero, label=right:{\small $-30$}] (C3) at (3.4,2.67) {C3};
+  \node[sumidero, label=right:{\small $-30$}] (C4) at (3.4,4) {C4};
+  \foreach \p/\c in {P1/C1, P1/C4, P2/C2, P2/C4, P3/C1, P3/C3} \draw[gris] (\p) -- (\c);
+  \foreach \p/\c/\f in {P1/C2/10, P1/C3/25, P2/C1/45, P2/C3/5, P3/C2/10, P3/C4/30}
+    \draw[usado] (\p) -- node[etq, pos=0.8, font=\scriptsize\bfseries] {\f} (\c);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.51\textwidth}
+Las flechas gruesas son los envíos óptimos (con las unidades); las grises, los arcos que no se usan.
+
+\textbf{¿Qué significa?} La planta 3, que está cerca de la ciudad 4 (costo 5), la abastece completa y le da el resto a
+la ciudad 2. La planta 2 se dedica casi por completo a la ciudad 1. La planta 1 reparte entre las ciudades 2 y 3. La
+ciudad 3 es la más cara de abastecer desde cualquier planta, por eso queda para el final y el método tuvo que
+\textbf{reacomodar} dos veces los envíos de la planta 1 para atenderla al menor costo. Con 7 rutas se encontró el plan
+de \textbf{\$1\,020}.
+\end{minipage}
+
+% =====================================================================
+\section{Distribution Unlimited Co.: transbordo con capacidades}
+\textit{Fuente: Hillier y Lieberman, Introducción a la Investigación de Operaciones, capítulo de modelos de optimización
+de redes (problema del flujo de costo mínimo).}
+
+\subsection*{Planteamiento del problema}
+La Distribution Unlimited Co. fabrica un producto en \textbf{dos fábricas} y debe llevarlo a \textbf{dos almacenes}.
+La fábrica F1 produce 50 unidades y la F2 produce 40; el almacén A1 necesita 30 y el A2 necesita 60. La mercadería
+puede ir directo, pasar por un \textbf{centro de distribución} (CD) o moverse entre los almacenes. Dos tramos tienen
+límite: el camión de F1 a F2 lleva como mucho 10 unidades y el de CD a A2, como mucho 80.
+
+La pregunta: \textbf{¿cuánto mandar por cada arco para abastecer los dos almacenes al menor costo?}
+
+\noindent
+\begin{minipage}[c]{0.40\textwidth}\small\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Arco} & \textbf{Costo} & \textbf{Capacidad} \\
+\midrule
+F1 \ra{} F2 & \$200 & 10 \\
+F1 \ra{} CD & \$400 & sin límite \\
+F1 \ra{} A1 & \$900 & sin límite \\
+F2 \ra{} CD & \$300 & sin límite \\
+CD \ra{} A2 & \$100 & 80 \\
+A1 \ra{} A2 & \$300 & sin límite \\
+A2 \ra{} A1 & \$200 & sin límite \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.57\textwidth}\centering
+\begin{tikzpicture}[x=1.45cm, y=-1.0cm]
+  \node[fuente, label=left:{\small $+50$}] (F1) at (0,0.4) {F1};
+  \node[fuente, label=left:{\small $+40$}] (F2) at (0,3.2) {F2};
+  \node[nodo, label=below:{\small $0$}] (CD) at (2,1.8) {CD};
+  \node[sumidero, label=right:{\small $-30$}] (A1) at (4,0.4) {A1};
+  \node[sumidero, label=right:{\small $-60$}] (A2) at (4,3.2) {A2};
+  \draw[arco] (F1) -- node[etq, align=center] {200\\(máx.\ 10)} (F2);
+  \draw[arco] (F1) -- node[etq] {400} (CD);
+  \draw[arco] (F1) -- node[etq, above] {900} (A1);
+  \draw[arco] (F2) -- node[etq] {300} (CD);
+  \draw[arco] (CD) -- node[etq, align=center] {100\\(máx.\ 80)} (A2);
+  \draw[arco] (A1) to[bend left=22] node[etq, right] {300} (A2);
+  \draw[arco] (A2) to[bend left=22] node[etq, left] {200} (A1);
+\end{tikzpicture}
+\end{minipage}
+
+\subsection*{Formulación del modelo}
+Sean $\x{F1}{CD}$, $\x{F1}{A1}$, \dots{} las unidades que van por cada arco (7 variables). \textbf{Conservación}
+(sale $-$ entra $=$ oferta): F1 ofrece 50, F2 ofrece 40, CD es de transbordo (0), A1 pide 30 ($-30$) y A2 pide 60
+($-60$). \textbf{Capacidades:} $\x{F1}{F2} \le 10$ y $\x{CD}{A2} \le 80$.
+\[
+\text{Min } Z = 200\,\x{F1}{F2} + 400\,\x{F1}{CD} + 900\,\x{F1}{A1} + 300\,\x{F2}{CD} + 100\,\x{CD}{A2}
+                  + 300\,\x{A1}{A2} + 200\,\x{A2}{A1}
+\]
+\[
+\begin{aligned}
+\text{s.a.}\quad & \x{F1}{F2} + \x{F1}{CD} + \x{F1}{A1} = 50 \nota{F1} &\qquad& \x{A1}{A2} - \x{F1}{A1} - \x{A2}{A1} = -30 \nota{A1}\\
+& \x{F2}{CD} - \x{F1}{F2} = 40 \nota{F2} && \x{A2}{A1} - \x{CD}{A2} - \x{A1}{A2} = -60 \nota{A2}\\
+& \x{CD}{A2} - \x{F1}{CD} - \x{F2}{CD} = 0 \nota{CD} && \x{F1}{F2} \le 10, \ \ \x{CD}{A2} \le 80, \ \ \text{todas} \ge 0
+\end{aligned}
+\]
+
+\subsection*{Preparación}
+Se ofrecen $50 + 40 = 90$ y se piden $30 + 60 = 90$: \textbf{está balanceado}. \Sini{} se une a F1 (espacio 50) y a
+F2 (espacio 40); A1 (espacio 30) y A2 (espacio 60) se unen a \Tfin. CD no ofrece ni pide: es un nodo de paso. Al inicio
+todo está vacío, costo acumulado 0.
+
+% ---------------------------------------------------------------------
+\subsection*{Las rutas, una por una}
+En los dibujos, la ruta de cada vuelta va en trazo grueso con el costo de cada tramo.
+
+\newcommand{\nodosDU}{%
+  \node[fuente, font=\scriptsize\bfseries] (F1) at (0,0.4) {F1};
+  \node[fuente, font=\scriptsize\bfseries] (F2) at (0,3.2) {F2};
+  \node[nodo, font=\scriptsize\bfseries] (CD) at (2,1.8) {CD};
+  \node[sumidero, font=\scriptsize\bfseries] (A1) at (4,0.4) {A1};
+  \node[sumidero, font=\scriptsize\bfseries] (A2) at (4,3.2) {A2};}
+\newcommand{\grisDU}{%
+  \draw[gris] (F1) -- (F2); \draw[gris] (F1) -- (CD); \draw[gris] (F1) -- (A1); \draw[gris] (F2) -- (CD);
+  \draw[gris] (CD) -- (A2); \draw[gris] (A1) to[bend left=22] (A2); \draw[gris] (A2) to[bend left=22] (A1);}
+
+\paso{Ruta 1: \ F2 $\to$ CD $\to$ A2}
+\noindent
+\begin{minipage}[c]{0.32\textwidth}\centering
+\begin{tikzpicture}[x=1.1cm, y=-0.8cm]
+  \nodosDU \grisDU
+  \draw[camino] (F2) -- node[etq] {300} (CD);
+  \draw[camino] (CD) -- node[etq] {100} (A2);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.66\textwidth}
+\begin{align*}
+\text{por unidad} &= 300 + 100 = 400 \nota{la más barata}\\
+\text{envío} &= \min(40, \infty, 80, 60) = 40 \nota{a F2 le quedan 40}\\
+\text{costo} &= 400 \times 40 = 16\,000\\
+\text{acumulado} &= 16\,000 \nota{van 40 de 90}
+\end{align*}
+\end{minipage}
+
+F2 manda toda su producción al almacén 2 pasando por el centro. En CD \ra{} A2 quedan $80 - 40 = 40$ de espacio.
+
+\paso{Ruta 2: \ F1 $\to$ CD $\to$ A2}
+\noindent
+\begin{minipage}[c]{0.32\textwidth}\centering
+\begin{tikzpicture}[x=1.1cm, y=-0.8cm]
+  \nodosDU \grisDU
+  \draw[camino] (F1) -- node[etq] {400} (CD);
+  \draw[camino] (CD) -- node[etq] {100} (A2);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.66\textwidth}
+\begin{align*}
+\text{por unidad} &= 400 + 100 = 500 \nota{pasando por F2: 600}\\
+\text{envío} &= \min(50, \infty, 40, 20) = 20 \nota{a A2 le faltan 20}\\
+\text{costo} &= 500 \times 20 = 10\,000\\
+\text{acumulado} &= 26\,000 \nota{van 60 de 90}
+\end{align*}
+\end{minipage}
+
+A2 queda completo (60). En CD \ra{} A2 van 60 de 80: quedan 20 de espacio. A F1 le quedan 30.
+
+\paso{Ruta 3: \ F1 $\to$ CD $\to$ A2 $\to$ A1}
+\noindent
+\begin{minipage}[c]{0.32\textwidth}\centering
+\begin{tikzpicture}[x=1.1cm, y=-0.8cm]
+  \nodosDU \grisDU
+  \draw[camino] (F1) -- node[etq] {400} (CD);
+  \draw[camino] (CD) -- node[etq] {100} (A2);
+  \draw[camino] (A2) to[bend left=22] node[etq, left] {200} (A1);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.66\textwidth}
+\begin{align*}
+\text{por unidad} &= 400 + 100 + 200 = 700 \nota{directo: 900}\\
+\text{envío} &= \min(30, \infty, 20, \infty, 30) = 20 \nota{límite de CD \ra{} A2}\\
+\text{costo} &= 700 \times 20 = 14\,000\\
+\text{acumulado} &= 40\,000 \nota{van 80 de 90}
+\end{align*}
+\end{minipage}
+
+Ahora solo falta A1. Es más barato llegar a él \textbf{pasando por A2} que ir directo, hasta que el tramo CD \ra{} A2
+se llena: lleva $40 + 20 + 20 = 80$, su capacidad.
+
+\paso{Ruta 4: \ F1 $\to$ A1}
+\noindent
+\begin{minipage}[c]{0.32\textwidth}\centering
+\begin{tikzpicture}[x=1.1cm, y=-0.8cm]
+  \nodosDU \grisDU
+  \draw[corte, gray] (CD) -- node[etq, text=black, font=\tiny] {lleno} (A2);
+  \draw[camino] (F1) -- node[etq, above] {900} (A1);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.66\textwidth}
+\begin{align*}
+\text{por unidad} &= 900 \nota{CD \ra{} A2 ya está lleno}\\
+\text{envío} &= \min(10, \infty, 10) = 10 \nota{a A1 le faltan 10}\\
+\text{costo} &= 900 \times 10 = 9\,000\\
+\text{acumulado} &= 49\,000 \nota{90 de 90: fin}
+\end{align*}
+\end{minipage}
+
+En este ejercicio ninguna ruta tuvo que deshacer envíos: lo que marcó el camino fue la \textbf{capacidad} de 80 del
+tramo CD \ra{} A2, que obligó a usar al final el arco caro F1 \ra{} A1.
+
+\subsection*{Resultado}
+\[
+\res{\text{Costo mínimo } Z^* = \$49\,000}
+\]
+\noindent
+\begin{minipage}[c]{0.42\textwidth}\small\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Arco} & \textbf{Envío} & \textbf{Precio} & \textbf{Costo} \\
+\midrule
+F1 \ra{} CD & 40 & 400 & 16\,000 \\
+F1 \ra{} A1 & 10 & 900 & 9\,000 \\
+F2 \ra{} CD & 40 & 300 & 12\,000 \\
+CD \ra{} A2 & 80 & 100 & 8\,000 \\
+A2 \ra{} A1 & 20 & 200 & 4\,000 \\
+\midrule
+\textbf{Total} & & & \textbf{49\,000} \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.56\textwidth}\small
+F1 \ra{} F2 y A1 \ra{} A2 llevan 0. Coincide con la solución de Hillier y Lieberman.
+
+\textbf{Comprobación} (sale $-$ entra $=$ oferta, y capacidades):
+\begin{itemize}[itemsep=1pt, leftmargin=*]
+  \item F1: $50 - 0 = 50$ \checkmark \quad F2: $40 - 0 = 40$ \checkmark
+  \item CD: $80 - (40 + 40) = 0$ \checkmark \ (nodo de paso)
+  \item A1: $0 - (10 + 20) = -30$ \checkmark \quad A2: $20 - 80 = -60$ \checkmark
+  \item F1 \ra{} F2: $0 \le 10$ \checkmark \quad CD \ra{} A2: $80 \le 80$ \checkmark (al tope)
+  \item Costo: $16\,000 + 9\,000 + 12\,000 + 8\,000 + 4\,000 = 49\,000$ \checkmark
+\end{itemize}
+\end{minipage}
+
+\subsection*{Interpretación gráfica}
+\noindent
+\begin{minipage}[c]{0.47\textwidth}\centering
+\begin{tikzpicture}[x=1.3cm, y=-1.0cm]
+  \node[fuente, label=left:{\small $+50$}] (F1) at (0,0.4) {F1};
+  \node[fuente, label=left:{\small $+40$}] (F2) at (0,3.2) {F2};
+  \node[nodo, label=below:{\small $0$}] (CD) at (2,1.8) {CD};
+  \node[sumidero, label=right:{\small $-30$}] (A1) at (4,0.4) {A1};
+  \node[sumidero, label=right:{\small $-60$}] (A2) at (4,3.2) {A2};
+  \draw[gris] (F1) -- (F2);
+  \draw[gris] (A1) to[bend left=22] (A2);
+  \draw[usado] (F1) -- node[etq, font=\scriptsize\bfseries] {40} (CD);
+  \draw[usado] (F1) -- node[etq, above, font=\scriptsize\bfseries] {10} (A1);
+  \draw[usado] (F2) -- node[etq, font=\scriptsize\bfseries] {40} (CD);
+  \draw[usado] (CD) -- node[etq, font=\scriptsize\bfseries] {80 (lleno)} (A2);
+  \draw[usado] (A2) to[bend left=22] node[etq, left, font=\scriptsize\bfseries] {20} (A1);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.50\textwidth}
+\textbf{¿Qué significa?} Casi todo pasa por el centro de distribución: las 40 unidades de F2 y 40 de las 50 de F1
+llegan a CD y de ahí 80 van al almacén 2, que es todo lo que permite ese tramo. El almacén 2 se queda con 60 y
+\textbf{reenvía 20 al almacén 1}, porque eso ($400 + 100 + 200 = 700$) sale más barato que el envío directo (900). Las
+últimas 10 unidades de F1 van directo al almacén 1. El camión entre fábricas no se usa. Costo: \textbf{\$49\,000}.
+\end{minipage}
+
+% =====================================================================
+\section{Ruta más corta en el parque Seervada}
+\textit{Fuente: Hillier y Lieberman, Introducción a la Investigación de Operaciones, capítulo de modelos de optimización
+de redes (problema de la ruta más corta).}
+
+\subsection*{Planteamiento del problema}
+El parque Seervada tiene caminos de tierra entre la entrada (O), varias estaciones (A, B, C, D y E) y un mirador (T).
+Cada camino se puede recorrer en los dos sentidos. Las distancias, en millas, son:
+
+\noindent
+\begin{minipage}[c]{0.38\textwidth}\small\centering
+\begin{tabular}{lc@{\quad}lc}
+\toprule
+\textbf{Camino} & \textbf{Millas} & \textbf{Camino} & \textbf{Millas} \\
+\midrule
+O -- A & 2 & B -- D & 4 \\
+O -- B & 5 & B -- E & 3 \\
+O -- C & 4 & C -- E & 4 \\
+A -- B & 2 & D -- E & 1 \\
+A -- D & 7 & D -- T & 5 \\
+B -- C & 1 & E -- T & 7 \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.60\textwidth}\centering
+\begin{tikzpicture}[x=1.45cm, y=-0.95cm]
+  \node[fuente, label=left:{\small $+1$}] (O) at (0,2) {O};
+  \node[nodo] (A) at (1.5,0.6) {A};
+  \node[nodo] (B) at (2,2) {B};
+  \node[nodo] (C) at (1.5,3.4) {C};
+  \node[nodo] (D) at (3.6,0.9) {D};
+  \node[nodo] (E) at (3.6,3.1) {E};
+  \node[sumidero, label=right:{\small $-1$}] (T) at (5,2) {T};
+  \foreach \u/\v/\d in {O/A/2, O/B/5, O/C/4, A/B/2, A/D/7, B/C/1, B/D/4, B/E/3, C/E/4, D/E/1, D/T/5, E/T/7}
+    \draw[calle] (\u) -- node[etq] {\d} (\v);
+\end{tikzpicture}
+\end{minipage}
+
+La pregunta: \textbf{¿cuál es la ruta más corta de la entrada O al mirador T?}
+
+\subsection*{Formulación del modelo}
+La ruta más corta es un flujo a costo mínimo con datos especiales: la entrada O \textbf{ofrece 1 unidad} ($+1$), el
+mirador T \textbf{la pide} ($-1$) y las demás estaciones son de paso (0); esa unidad es ``el viajero''. Cada camino se
+convierte en \textbf{dos arcos} (ida y vuelta) con el mismo costo, su distancia: son 24 arcos, ninguno con límite. Así,
+el costo total es la longitud de la ruta por donde pasa la unidad.
+\[
+\begin{aligned}
+\text{Min } Z &= 2\,\x{O}{A} + 5\,\x{O}{B} + 4\,\x{O}{C} + 2\,\x{A}{B} + \dots + 5\,\x{T}{D} + 7\,\x{T}{E} \nota{24 arcos}\\
+\text{s.a.}\quad & \text{O: sale} - \text{entra} = 1, \qquad \text{T: sale} - \text{entra} = -1\\
+& \text{A, B, C, D, E: sale} - \text{entra} = 0 \nota{son puntos de paso}\\
+& \text{todas} \ge 0
+\end{aligned}
+\]
+Por ejemplo, en A la regla es $\x{A}{B} + \x{A}{D} + \x{A}{O} - \x{O}{A} - \x{B}{A} - \x{D}{A} = 0$.
+Gracias a la propiedad de soluciones enteras, cada arco termina llevando 0 o 1: la unidad no se ``parte'' entre dos caminos.
+
+\subsection*{Preparación}
+Se ofrece 1 y se pide 1: \textbf{está balanceado}. \Sini{} se une a O con espacio 1 y T se une a \Tfin{} con espacio 1.
+Todas las distancias son positivas, así que no puede haber recorridos circulares de costo negativo.
+
+% ---------------------------------------------------------------------
+\subsection*{La única ruta}
+
+\paso{Ruta 1: \ O $\to$ A $\to$ B $\to$ D $\to$ T}
+Para encontrarla se anota, para cada estación, \textbf{la distancia más corta para llegar desde O} (es lo que hace la
+búsqueda de la ruta más barata). Se empieza con O en 0 y se va corrigiendo hasta que nada cambie:
+
+\begin{center}\small
+\begin{tabular}{cccp{6.4cm}}
+\toprule
+\textbf{Estación} & \textbf{Distancia desde O} & \textbf{Se llega desde} & \textbf{Por qué} \\
+\midrule
+O & 0  & --- & es el inicio \\
+A & 2  & O & O -- A: 2 \\
+B & 4  & A & $2 + 2 = 4$, mejor que O -- B directo (5) \\
+C & 4  & O & O -- C: 4, mejor que por B ($4 + 1 = 5$) \\
+E & 7  & B & $4 + 3 = 7$, mejor que por C ($4 + 4 = 8$) \\
+D & 8  & B & $4 + 4 = 8$; por E también da $7 + 1 = 8$ (empate); por A, $2 + 7 = 9$ \\
+T & 13 & D & $8 + 5 = 13$, mejor que por E ($7 + 7 = 14$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Siguiendo la columna ``se llega desde'' hacia atrás, desde T: T $\leftarrow$ D $\leftarrow$ B $\leftarrow$ A $\leftarrow$ O.
+\begin{align*}
+\text{costo por unidad} &= 2 + 2 + 4 + 5 = 13 \nota{la suma de las distancias}\\
+\text{envío} &= \min(1,\ \infty,\ \infty,\ \infty,\ \infty,\ 1) = 1 \nota{solo hay un viajero}\\
+\text{costo} &= 13 \times 1 = 13, \qquad \text{acumulado} = 13 \nota{va 1 de 1: terminado}
+\end{align*}
+
+Con una sola vuelta se entregó todo lo pedido: no hace falta otra iteración. En la ruta más corta el método
+siempre termina en una vuelta, porque solo hay una unidad que mandar.
+
+\subsection*{Resultado}
+\[
+\res{\text{Distancia mínima de O a T} = 13 \text{ millas}}
+\]
+La ruta es \textbf{O \ra{} A \ra{} B \ra{} D \ra{} T}: los arcos O \ra{} A, A \ra{} B, B \ra{} D y D \ra{} T llevan 1
+unidad y los otros 20 llevan 0.
+
+\textbf{Hay más de una ruta óptima.} Hillier y Lieberman reportan dos rutas de 13 millas:
+O \ra{} A \ra{} B \ra{} D \ra{} T y O \ra{} A \ra{} B \ra{} E \ra{} D \ra{} T ($2 + 2 + 3 + 1 + 5 = 13$). El empate se ve en la
+tabla (a D se llega con 8 millas desde B y desde E); la calculadora encuentra una de ellas.
+
+\textbf{Comprobación (conservación en cada nodo):}
+\begin{itemize}[itemsep=2pt]
+  \item O: sale 1, entra 0: $1 - 0 = 1$ \checkmark \qquad T: sale 0, entra 1: $0 - 1 = -1$ \checkmark
+  \item A, B y D: entra 1 y sale 1: $1 - 1 = 0$ \checkmark \qquad C y E: no pasa nada, $0 - 0 = 0$ \checkmark
+  \item Capacidades: no hay límites \checkmark. \ Distancia: $2 + 2 + 4 + 5 = 13$ \checkmark
+\end{itemize}
+
+\subsection*{Interpretación gráfica}
+\noindent
+\begin{minipage}[c]{0.56\textwidth}\centering
+\begin{tikzpicture}[x=1.4cm, y=-1.0cm]
+  \node[fuente, label=left:{\small $+1$}] (O) at (0,2) {O};
+  \node[nodo, label=above:{\scriptsize 2}] (A) at (1.5,0.6) {A};
+  \node[nodo, label=below:{\scriptsize 4}] (B) at (2,2) {B};
+  \node[nodo, label=below:{\scriptsize 4}] (C) at (1.5,3.4) {C};
+  \node[nodo, label=above:{\scriptsize 8}] (D) at (3.6,0.9) {D};
+  \node[nodo, label=below:{\scriptsize 7}] (E) at (3.6,3.1) {E};
+  \node[sumidero, label=right:{\small $-1$}, label=above:{\scriptsize 13}] (T) at (5,2) {T};
+  \foreach \u/\v/\d in {O/B/5, O/C/4, A/D/7, B/C/1, C/E/4, E/T/7}
+    \draw[gray!55] (\u) -- node[etq, text=gray] {\d} (\v);
+  \draw[very thick, dash pattern=on 3pt off 2pt] (B) -- node[etq] {3} (E);
+  \draw[very thick, dash pattern=on 3pt off 2pt] (E) -- node[etq] {1} (D);
+  \draw[camino] (O) -- node[etq] {2} (A);
+  \draw[camino] (A) -- node[etq] {2} (B);
+  \draw[camino] (B) -- node[etq] {4} (D);
+  \draw[camino] (D) -- node[etq] {5} (T);
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.42\textwidth}
+La ruta gruesa es la que encontró el método; el tramo B -- E -- D en trazo discontinuo es la otra ruta de 13 millas.
+El número pequeño junto a cada estación es su distancia más corta desde O.
+\end{minipage}
+
+\textbf{¿Qué significa?} Para ir de la entrada al mirador conviene pasar por A, B y D: son \textbf{13 millas}, y
+ningún otro recorrido es más corto (por ejemplo, O \ra{} B \ra{} D \ra{} T mide 14 y O \ra{} A \ra{} D \ra{} T mide 14).
+El ejercicio muestra que la ruta más corta no necesita un método aparte: es un flujo a costo mínimo en el que se manda
+una sola unidad.
+
+% =====================================================================
+\section*{Resumen de los tres ejercicios}
+\addcontentsline{toc}{part}{Resumen y conclusiones}
+\begin{center}\small
+\begin{tabular}{llccll}
+\toprule
+\textbf{Ejercicio} & \textbf{Caso particular} & \textbf{Nodos / arcos} & \textbf{Rutas} & \textbf{¿Deshace?} & \textbf{Óptimo} \\
+\midrule
+Powerco & transporte & 7 / 12 & 7 & sí (rutas 5 y 7) & \$1\,020 \\
+Distribution Unl. & transbordo y límites & 5 / 7 & 4 & no & \$49\,000 \\
+Seervada & ruta más corta & 7 / 24 & 1 & no & 13 millas \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{idea}[Conclusiones]
+\begin{itemize}[itemsep=2pt, leftmargin=*]
+  \item El flujo a costo mínimo pide entregar todo lo pedido gastando lo menos, respetando la \textbf{conservación}
+        (sale $-$ entra $=$ oferta) y las \textbf{capacidades}.
+  \item Es el problema ``padre'': el transporte, la asignación, el transbordo, la ruta más corta y el flujo máximo son
+        casos particulares, y un mismo método los resuelve.
+  \item El método de \textbf{rutas más baratas sucesivas} junta las ofertas en \Sini{} y las demandas en \Tfin, y en cada
+        vuelta manda lo que pueda por la ruta más barata con espacio.
+  \item Los \textbf{tramos al revés} (costo negativo) permiten deshacer envíos y corregir el plan; por eso se busca la
+        ruta con Bellman-Ford. Termina cuando se entregó todo, y con datos enteros los envíos salen enteros.
+\end{itemize}
+\end{idea}
+
+\textbf{Verificación:} los tres ejercicios se comprobaron con la implementación del método (\emph{Simplex Arcade},
+modo 5P Costo mín., memorias 13, 14 y 15), que reproduce las mismas rutas y costos; además, cada problema se planteó como
+programación lineal y se resolvió con el Simplex Revisado de la calculadora y con la librería javascript-lp-solver, que
+confirman los tres óptimos: 1\,020, 49\,000 y 13.
+
+\section*{Referencias}
+\addcontentsline{toc}{part}{Referencias}
+\begin{itemize}[leftmargin=*, itemsep=1pt]
+  \item Ahuja, R. K., Magnanti, T. L. y Orlin, J. B. (1993). \textit{Network Flows: Theory, Algorithms, and Applications}. Prentice Hall.
+  \item Bazaraa, M. S., Jarvis, J. J. y Sherali, H. D. \textit{Programación lineal y flujo en redes}. Limusa.
+  \item Hillier, F. S. y Lieberman, G. J. \textit{Introducción a la Investigación de Operaciones}. McGraw-Hill.
+        Capítulo de modelos de optimización de redes.
+  \item Taha, H. A. \textit{Investigación de Operaciones}. Pearson.
+  \item Winston, W. L. \textit{Investigación de operaciones: aplicaciones y algoritmos}. Thomson. Capítulo del modelo de transporte.
+\end{itemize}
+
+\end{document}
