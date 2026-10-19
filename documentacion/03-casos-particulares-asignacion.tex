@@ -2,6 +2,9 @@
 \usepackage{estilo-libro}
 \usetikzlibrary{matrix,backgrounds}
 \usepackage{needspace}
+% Que un título de paso no quede solo al final de una página
+\let\pasobase\paso
+\renewcommand{\paso}[1]{\needspace{7\baselineskip}\pasobase{#1}}
 
 % ---------- Tablas húngaras en TikZ ----------
 % Fila 1 = encabezados, columna 1 = nombres. Los datos van desde la celda (2,2).
@@ -26,8 +29,8 @@
 \newcommand{\sfila}[3]{\begin{pgfonlayer}{background}\fill[gray!16] (#1-#2-2.north west) rectangle (#1-#2-#3.south east);\end{pgfonlayer}}
 \newcommand{\scol}[3]{\begin{pgfonlayer}{background}\fill[gray!16] (#1-2-#2.north west) rectangle (#1-#3-#2.south east);\end{pgfonlayer}}
 % Líneas que tapan ceros: \lfila{nombre}{fila}{última columna}, \lcol{nombre}{columna}{última fila}
-\newcommand{\lfila}[3]{\begin{pgfonlayer}{background}\draw[tapa] ($(#1-#2-2.west)+(-4pt,0)$) -- ($(#1-#2-#3.east)+(4pt,0)$);\end{pgfonlayer}}
-\newcommand{\lcol}[3]{\begin{pgfonlayer}{background}\draw[tapa] ($(#1-2-#2.north)+(0,4pt)$) -- ($(#1-#3-#2.south)+(0,-4pt)$);\end{pgfonlayer}}
+\newcommand{\lfila}[3]{\begin{pgfonlayer}{background}\draw[tapa] ($(#1-#2-2.west)+(-1.5pt,0)$) -- ($(#1-#2-#3.east)+(1.5pt,0)$);\end{pgfonlayer}}
+\newcommand{\lcol}[3]{\begin{pgfonlayer}{background}\draw[tapa] ($(#1-2-#2.north)+(0,1.5pt)$) -- ($(#1-#3-#2.south)+(0,-1.5pt)$);\end{pgfonlayer}}
 % Cero asignado: \cero{nombre}{fila-columna}
 \newcommand{\cero}[2]{\node[asignado] at (#1-#2) {};}
 % Texto al pie de una tabla: \pie{nombre}{última fila}{última columna}{texto}
@@ -63,7 +66,7 @@ tareas), de \textbf{costos} que se quieren \textbf{minimizar} y en la que \textb
 Tres amigos comparten un departamento y hay \textbf{cuatro} tareas: cocinar, lavar, barrer y hacer las compras.
 Cada uno tarda un tiempo distinto en cada tarea. Pero ocurre que:
 \begin{itemize}[itemsep=1pt, topsep=2pt]
-  \item hay \textbf{más tareas que personas} (una tarea se quedará sin hacer esta semana);
+  \item hay \textbf{más tareas que personas} (si cada uno hace una sola, una tarea se quedará sin hacer);
   \item Luis \textbf{no puede} hacer las compras porque no tiene auto;
   \item Ana es tan rápida que \textbf{puede hacer dos tareas};
   \item y si en vez de tiempos tuviéramos \textbf{puntos de gusto} (cuánto le agrada a cada uno cada tarea),
@@ -98,6 +101,7 @@ con el método húngaro y se interpreta la respuesta.
 \end{tikzpicture}
 \end{center}
 
+\needspace{9\baselineskip}
 Las transformaciones son cuatro, y cada una tiene una idea muy simple detrás:
 
 \begin{center}\small
@@ -182,8 +186,9 @@ Balanceado & Que hay tantos agentes como tareas: la tabla es cuadrada. \\
 Ficticio & Fila o columna que \textbf{no existe}, con costo 0, agregada para cuadrar la tabla. Lo que le toque queda sin pareja. \\
 $M$ & Un número tan grande como haga falta. Se pone en las parejas \textbf{prohibidas}. \\
 Pérdida & ``Pérdida de oportunidad'': lo que se deja de ganar al elegir una pareja en lugar de la mejor de la tabla. \\
-Línea & Raya que tapa una fila o una columna completa. En este documento se dibuja así: \linea. \\
-$k$ & El menor de los números que quedan sin tapar. Sirve para crear ceros nuevos. Un cero elegido se encierra así: \asg{0}. \\
+Línea & Raya que tapa una fila o una columna completa. Aquí se dibuja así: \linea. \\
+$k$ & El menor de los números que quedan sin tapar. Sirve para crear ceros nuevos. \\
+Cero asignado & El cero que se escoge para formar una pareja. Se encierra en un círculo: \asg{0}. \\
 Óptimos múltiples & Dos o más asignaciones distintas con el mismo costo mínimo. \\
 Infactible & Que no hay forma de asignar a todos sin usar una pareja prohibida. \\
 \bottomrule
@@ -203,7 +208,7 @@ valen \textbf{0}.
 \begin{minipage}[c]{0.36\textwidth}
 \centering
 \begin{tikzpicture}
-\matrix (c1) [mini, column 1/.style={nodes={text width=14mm, font=\small\bfseries}}] {
+\matrix (c1) [mini, column 1/.style={nodes={text width=16mm, font=\small\bfseries}}] {
  \& T1 \& T2 \& T3 \\
 Ana  \& 4 \& 6 \& 5 \\
 Beto \& 7 \& 3 \& 8 \\
@@ -254,7 +259,7 @@ Beto \& 4 \& 0 \& 5 \\
 Caro \& 2 \& 7 \& 3 \\
 };
 \rejilla{c2b}{4}{4}
-\pie{c2b}{4}{4}{pérdida $= 9 -$ ganancia}
+\pie{c2b}{4}{4}{$\text{pérdida} = 9 - \text{ganancia}$}
 \end{tikzpicture}
 \end{minipage}\hfill
 \begin{minipage}[c]{0.46\textwidth}
@@ -345,9 +350,10 @@ Esto ocurre en el ejercicio 3 de la Parte II.
 
 \paso{Caso 6 (breve). Empates al tapar los ceros}
 Si hay varias formas de tapar los ceros con el mínimo de líneas, o varios números empatados como menor sin tapar,
-cualquier elección es válida y lleva al mismo costo mínimo. La calculadora siempre elige de la misma manera
-(método de marcas de König), por eso sus líneas coinciden con las de este documento.
+cualquier elección es válida y lleva al mismo costo mínimo. La calculadora siempre elige con la misma regla, y
+este documento usa las mismas líneas que ella para que se puedan comparar paso a paso.
 
+\needspace{14\baselineskip}
 \begin{idea}[Resumen: cómo preparar la tabla]
 \begin{enumerate}[leftmargin=*, itemsep=3pt]
   \item \textbf{¿Algún agente hace varias tareas?} Copiar su fila una vez por cada tarea que pueda hacer.
@@ -425,6 +431,7 @@ cualquier elección es válida y lleva al mismo costo mínimo. La calculadora si
 \end{tabular}
 \end{center}
 
+\enlargethispage{3\baselineskip}
 \textbf{Relación con la programación lineal.} Cada caso particular también se puede escribir como un programa
 lineal con variables $x_{ij}$ ($= 1$ si el agente $i$ hace la tarea $j$). Lo no balanceado se vuelve
 ``$\le 1$'' en lugar de ``$= 1$'', la capacidad de un agente se vuelve ``$\le 2$'', y una pareja prohibida
@@ -498,6 +505,7 @@ Ficticia  \& 0 \& 0 \& 0 \& 0 \& menor 0 \\
 \end{tikzpicture}
 \end{minipage}
 
+\medskip
 Ahora la tabla es de $4 \times 4$: ya se puede usar el método húngaro.
 
 \paso{Paso 1. Restar el menor de cada fila}
@@ -564,8 +572,8 @@ Ficticia  \& 0 \& 0 \& 0 \& 0 \\
 \end{itemize}
 
 \textbf{Comprobación:} cada máquina tiene una sola ubicación \checkmark; ninguna ubicación tiene dos máquinas
-\checkmark; no se usó la pareja prohibida (máquina 2, ubicación 2) \checkmark; probando las 24 formas posibles de
-colocar las 3 máquinas, la más barata cuesta 29 y la siguiente cuesta 31 \checkmark.
+\checkmark; no se usó la pareja prohibida (máquina 2, ubicación 2) \checkmark; de las 24 formas de colocar las 3 máquinas,
+18 respetan la prohibición, y entre ellas la más barata cuesta 29 y la siguiente 31 \checkmark.
 
 \subsection*{Interpretación gráfica}
 \begin{center}
@@ -590,9 +598,9 @@ colocar las 3 máquinas, la más barata cuesta 29 y la siguiente cuesta 31 \chec
 \end{tikzpicture}
 \end{center}
 Las líneas gruesas son las parejas elegidas, con su costo por hora. La línea punteada con $M$ es la pareja
-prohibida, y la discontinua es la ``pareja'' de la máquina ficticia. \textbf{En palabras:} conviene poner cada
-máquina en la ubicación que le queda más cerca de su trabajo y dejar libre la ubicación 2, que de todos modos no
-servía para la máquina 2. Así se gastan \$29 por hora en mover materiales, lo mínimo posible.
+prohibida, y la discontinua es la ``pareja'' de la máquina ficticia. \textbf{En palabras:} aquí cada
+máquina puede ir a su ubicación más barata (11, 13 y 5) sin chocar con las demás, y queda libre la ubicación 2,
+que de todos modos no servía para la máquina 2. Así se gastan \$29 por hora en mover materiales, lo mínimo posible.
 
 % =====================================================================
 \section{Vendedores y zonas: maximizar las ventas}
@@ -634,7 +642,7 @@ El mayor valor de la tabla es \textbf{80} (Ana en el Sur). Cada casilla se cambi
 Así queda la tabla de la izquierda, con el menor de cada fila anotado al lado.
 
 \begin{center}
-\begin{tikzpicture}
+\begin{tikzpicture}[baseline=(p-1-2.north)]
 \matrix (p) [htab=9.2mm, nota col=6, column 1/.style={nodes={text width=13.5mm, font=\small\bfseries}}] {
  \& Norte \& Sur \& Este \& Oeste \& \\
 Ana   \& 36 \& 0  \& 28 \& 20 \& menor 0 \\
@@ -643,9 +651,9 @@ Carla \& 44 \& 20 \& 32 \& 32 \& menor 20 \\
 Diego \& 28 \& 4  \& 44 \& 40 \& menor 4 \\
 };
 \rejilla{p}{5}{5}
-\pie{p}{5}{5}{pérdida $= 80 -$ venta}
+\pie{p}{5}{5}{$\text{pérdida} = 80 - \text{venta}$}
 \end{tikzpicture}\qquad
-\begin{tikzpicture}
+\begin{tikzpicture}[baseline=(p1-1-2.north)]
 \matrix (p1) [htab=9.2mm, column 1/.style={nodes={text width=13.5mm, font=\small\bfseries}}] {
  \& Norte \& Sur \& Este \& Oeste \\
 Ana   \& 36 \& 0  \& 28 \& 20 \\
@@ -759,15 +767,15 @@ repartir dan como máximo 252, y la siguiente mejor da 244 \checkmark.
   \foreach \a in {Ana,Beto,Carla,Diego} \foreach \z in {Norte,Sur,Este,Oeste} \draw[gray!40] (\a) -- (\z);
   \draw[line width=2.2pt] (Ana) -- node[etq, pos=0.25] {80} (Sur);
   \draw[line width=2.2pt] (Beto) -- node[etq, pos=0.25] {72} (Oeste);
-  \draw[line width=2.2pt] (Carla) -- node[etq, pos=0.25] {48} (Este);
-  \draw[line width=2.2pt] (Diego) -- node[etq, pos=0.25] {52} (Norte);
+  \draw[line width=2.2pt] (Carla) -- node[etq, pos=0.8] {48} (Este);
+  \draw[line width=2.2pt] (Diego) -- node[etq, pos=0.15] {52} (Norte);
 \end{tikzpicture}
 \end{minipage}\hfill
 \begin{minipage}[c]{0.47\textwidth}
 \textbf{En palabras:} Ana se queda con el Sur, donde vende más que nadie (80). Diego también vendería mucho en el
 Sur (76), pero como el Sur ya es de Ana, a Diego le conviene el Norte (52). Beto va al Oeste (72) y a Carla le toca
 el Este (48). Fíjate en que \textbf{no basta con darle a cada uno su mejor zona}: Ana y Diego querrían el Sur, y el
-método resuelve ese choque de la manera que menos ventas se pierden.
+método resuelve ese choque de la forma en que se pierden menos ventas.
 \end{minipage}
 
 % =====================================================================
@@ -833,6 +841,7 @@ Planta 3 \& 740 \& 900 \& 810 \& 840 \& 0 \\
 \end{tikzpicture}}
 \end{minipage}
 
+\medskip
 La tabla queda de $5 \times 5$.
 
 \paso{Paso 1. Restar el menor de cada fila}
@@ -902,7 +911,8 @@ Lo único sin tapar son las dos filas de la planta 2 en los productos 1 a 4: $30
 k = 30 \nota{planta 2, producto 1}
 \]
 Se resta 30 en esas casillas ($30 \to 0$, $60 \to 30$, $M - 840 \to M - 870$, $50 \to 20$) y se suma 30 en los
-cruces de la columna ficticia con las filas tapadas: plantas 1 ($0 \to 30$) y planta 3 ($30 \to 60$).
+cruces de la columna ficticia con las filas tapadas: las dos copias de la planta 1 ($0 \to 30$) y la planta 3
+($30 \to 60$).
 
 \paso{Paso 3 (otra vez). Tapar los ceros}
 Ahora hacen falta \textbf{5 líneas} (la calculadora tapa las cinco filas), así que ya se puede asignar.
@@ -975,7 +985,7 @@ múltiple: solo avisa cuando cambia alguna pareja real planta--producto. Revisan
 los productos, este plan es el único que cuesta 3\,290; el siguiente cuesta 3\,310.
 
 \textbf{Comprobación:} cada producto tiene una sola planta \checkmark; la planta 1 hace 2 productos
-($\le 2$) \checkmark, la planta 2 hace 1 ($\le 2$) \checkmark y la planta 3 hace 1 ($\le 1$) \checkmark; la planta 2 no
+($\le 2$) \checkmark, la planta 2 hace 1 ($\le 2$) \checkmark{} y la planta 3 hace 1 ($\le 1$) \checkmark; la planta 2 no
 fabrica el producto 3 \checkmark.
 
 \subsection*{Interpretación gráfica}

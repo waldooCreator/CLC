@@ -24,7 +24,7 @@
 \newcommand{\tfila}[3]{\draw[tapa] (#1-#2-2.west) -- (#1-#2-#3.east);}
 \newcommand{\tcol}[3]{\draw[tapa] (#1-2-#2.north) -- (#1-#3-#2.south);}
 \newcommand{\cero}[1]{\node[asig] at (#1) {};}
-\newcommand{\flecha}[3]{\draw[-{Stealth[length=2.4mm]}, thick] (#1.east) -- node[above, font=\scriptsize, align=center] {#3} (#1.east -| #2.west);}
+\newcommand{\flecha}[3]{\draw[-{Stealth[length=2.4mm]}, thick, shorten >=1mm] (#1.east) -- node[above, font=\scriptsize, align=center] {#3} (#1.east -| #2.west);}
 \newcommand{\pie}[2]{\node[below=1.5mm of #1, font=\scriptsize\itshape] {#2};}
 
 \title{El problema de asignación}
@@ -230,7 +230,7 @@
   \bigskip
   \begin{itemize}
     \item Sin tapar: $10, 4, 1$ y $2, 4, 6$ $\Rightarrow$ $k = 1$.
-    \item Lo no tapado baja 1 (nace un cero en M2--T4); los cruces M1--T1 y M3--T1 suben 1.
+    \item Lo no tapado baja 1 (nace el cero M2--T4); los cruces M1--T1 y M3--T1 suben 1.
   \end{itemize}
 \end{frame}
 

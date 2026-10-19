@@ -2,6 +2,10 @@
 
 \usepackage{estilo-libro}
 \usetikzlibrary{matrix}
+\usepackage{needspace}
+% Que un título de paso no quede solo al final de una página
+\let\pasobase\paso
+\renewcommand{\paso}[1]{\needspace{7\baselineskip}\pasobase{#1}}
 
 % ---------- Tablas del método húngaro (solo en este documento) ----------
 % Las líneas que tapan ceros se dibujan en una capa de fondo para que los números se sigan leyendo.
@@ -32,7 +36,7 @@
 \newcommand{\pie}[2]{\node[below=1.5mm of #1, font=\scriptsize\itshape] {#2};}
 % \cero{celda}: cero asignado, encerrado en un círculo
 \newcommand{\cero}[1]{\node[asig] at (#1) {};}
-\newcommand{\flecha}[3]{\draw[-{Stealth[length=2.4mm]}, thick] (#1.east) -- node[above, font=\scriptsize, align=center] {#3} (#1.east -| #2.west);}
+\newcommand{\flecha}[3]{\draw[-{Stealth[length=2.4mm]}, thick, shorten >=1mm] (#1.east) -- node[above, font=\scriptsize, align=center] {#3} (#1.east -| #2.west);}
 
 \title{\textbf{El problema de asignación}\\[4pt]\large El método de Kuhn-Munkres (método húngaro) y ejercicios resueltos}
 \author{Investigación de Operaciones · Asignación y flujo en redes}
@@ -182,7 +186,7 @@ El método húngaro, tal como se explica aquí, necesita tres cosas:
 \end{description}
 
 Estos tres arreglos son los \textbf{casos particulares} y se explican con detalle, con sus propios ejercicios, en el
-documento del tema 2. Los tres ejercicios de este documento ya vienen cuadrados, son de minimizar y no tienen
+documento \emph{Casos particulares del problema de asignación}. Los tres ejercicios de este documento ya vienen cuadrados, son de minimizar y no tienen
 parejas prohibidas, así que \textbf{no hace falta preparar nada}.
 
 % =====================================================================
@@ -241,7 +245,8 @@ $(3,\ 7,\ 0)$ y $(2,\ 5,\ 0)$.
 
 \paso{Paso 3. Tapar todos los ceros con el menor número de líneas}
 Se trazan líneas sobre filas o columnas completas hasta que no quede ningún cero sin tapar, usando
-\textbf{las menos líneas posibles}. Una forma práctica es tapar primero la fila o columna que tenga más ceros.
+\textbf{las menos líneas posibles}. Una forma práctica es tapar primero la fila o columna que tenga más ceros
+(esta regla no siempre da el mínimo: si después no se logra asignar, hay que revisar las líneas).
 \begin{itemize}[itemsep=2pt]
   \item Si se necesitan \textbf{tantas líneas como filas} ($n$), ya se puede asignar: se salta al paso 5.
   \item Si alcanzan \textbf{menos de $n$ líneas}, todavía no hay un cero para cada fila: se pasa al paso 4.
@@ -249,7 +254,8 @@ Se trazan líneas sobre filas o columnas completas hasta que no quede ningún ce
 El número mínimo de líneas es justo la cantidad de parejas que se pueden formar con ceros sin repetir fila ni
 columna (lo demostró König). Por eso, con $n$ líneas, siempre hay una asignación completa.
 
-\textit{En el ejemplo:} basta con 2 líneas, la fila de Terry y la columna C3. Como $2 < 3$, falta un cero.
+\textit{En el ejemplo:} basta con 2 líneas, la fila de Terry y la columna C3. Como $2 < 3$, todavía no se puede
+asignar.
 
 \paso{Paso 4. Ajustar con el menor número sin tapar}
 Se busca $k$, el número más pequeño que \textbf{no} tiene ninguna línea encima. Entonces:
@@ -296,6 +302,7 @@ calcula sumando los números \textbf{originales} de las casillas elegidas.
 \textit{En el ejemplo:} Carle solo tiene un cero (C3); después McClymonds solo tiene libre el de C1, y a Terry le
 queda C2. El total es $15 + 5 + 6 = 26$ días.
 
+\needspace{13\baselineskip}
 \begin{idea}[Resumen de los pasos]
 \begin{enumerate}[leftmargin=*, itemsep=3pt]
   \item[\textbf{0.}] Preparar: tabla cuadrada, de minimizar y sin parejas prohibidas.
@@ -464,7 +471,7 @@ empezar directamente.
 \end{tikzpicture}
 \end{center}
 Los menores son 9, 9 y 8 (columna ``menor'' de la tabla original). Por ejemplo,
-$\text{John}: (15,\ 10,\ 9) - 9 = (6,\ 1,\ 0)$: pase lo que pase, John cobra al menos 9.
+$\text{John:}\ (15,\ 10,\ 9) - 9 = (6,\ 1,\ 0)$: pase lo que pase, John cobra al menos 9.
 Igual con Karen ($-9$) y Terri ($-8$).
 
 \paso{Paso 2. Restar el menor de cada columna}
@@ -497,9 +504,9 @@ Podar y lavar ya tenían un cero (su menor es 0, no cambian). En \textbf{pintar}
   \pie{a}{Paso 3: 3 líneas} \pie{b}{Paso 5: ceros asignados}
 \end{tikzpicture}
 \end{center}
-Los ceros están en (John, pintar), (John, lavar), (Karen, podar) y (Terri, lavar). No alcanza con 2 líneas: Karen
-tiene su cero en podar, que no comparte con nadie, y los otros tres ceros están repartidos entre dos filas y dos
-columnas. Hacen falta \textbf{3 líneas} (aquí, las tres filas).
+Los ceros están en (John, pintar), (John, lavar), (Karen, podar) y (Terri, lavar). No alcanza con 2 líneas: el cero
+de Karen en podar necesita una línea propia, y los otros tres necesitan dos más, porque (John, pintar) y
+(Terri, lavar) no comparten ni fila ni columna. Hacen falta \textbf{3 líneas} (aquí, las tres filas).
 \[
 3 \text{ líneas} = 3 \text{ filas} \nota{ya se puede asignar: no hace falta el paso 4}
 \]
@@ -607,7 +614,7 @@ La pregunta: \textbf{¿qué líder conviene asignar a cada cliente para que el t
 \end{tikzpicture}
 \end{center}
 Los menores son 9, 5 y 3, y los tres están en la columna C3: \textbf{los tres líderes son más rápidos con el
-cliente 3}. Por ejemplo, $\text{Terry}: (10,\ 15,\ 9) - 9 = (1,\ 6,\ 0)$.
+cliente 3}. Por ejemplo, $\text{Terry:}\ (10,\ 15,\ 9) - 9 = (1,\ 6,\ 0)$.
 
 \paso{Paso 2. Restar el menor de cada columna}
 C1 baja 1: $(1,\ 4,\ 3) - 1 = (0,\ 3,\ 2)$. C2 baja 6: $(6,\ 13,\ 11) - 6 = (0,\ 7,\ 5)$, porque el cliente 2
@@ -636,7 +643,8 @@ le cuesta a cualquiera al menos 6 días más que su mejor opción. C3 ya tenía 
   \pie{a}{Paso 3: 2 líneas} \pie{b}{Paso 4: después del ajuste}
 \end{tikzpicture}
 \end{center}
-La fila de Terry tiene tres ceros y la columna C3 otros tres: con \textbf{2 líneas} se tapan todos.
+La fila de Terry tapa sus tres ceros y la columna C3 tapa los de Carle y McClymonds: con \textbf{2 líneas} se
+tapan todos.
 \[
 2 \text{ líneas} < 3 \text{ filas} \nota{todavía no: Carle y McClymonds solo tienen ceros en C3}
 \]
@@ -785,7 +793,7 @@ Aquí ya hay $4! = 24$ repartos posibles.
   \pie{a}{tabla original} \pie{b}{después del paso 1} \pie{c}{después del paso 2}
 \end{tikzpicture}
 \end{center}
-Los menores son 5, 2, 3 y 2. Por ejemplo, $\text{M1}: (14,\ 5,\ 8,\ 7) - 5 = (9,\ 0,\ 3,\ 2)$: la máquina 1
+Los menores son 5, 2, 3 y 2. Por ejemplo, $\text{M1:}\ (14,\ 5,\ 8,\ 7) - 5 = (9,\ 0,\ 3,\ 2)$: la máquina 1
 tarda al menos 5 h en prepararse, haga el trabajo que haga.
 
 \paso{Paso 2. Restar el menor de cada columna}
@@ -872,13 +880,14 @@ En la tabla de la derecha:
 
 \subsection*{Resultado}
 \[
-\res{M_1 \to T_2,\ \ M_2 \to T_4,\ \ M_3 \to T_3,\ \ M_4 \to T_1,\quad Z^* = 15 \text{ horas}}
+\res{\text{M1} \to \text{T2},\ \ \text{M2} \to \text{T4},\ \ \text{M3} \to \text{T3},\ \ \text{M4} \to \text{T1},\quad Z^* = 15 \text{ horas}}
 \]
 \begin{itemize}[itemsep=2pt]
   \item La máquina 1 hace el trabajo 2 (5 h), la 2 el trabajo 4 (5 h), la 3 el trabajo 3 (3 h) y la 4 el trabajo 1 (2 h).
   \item Tiempo total de preparación: $5 + 5 + 3 + 2 = \mathbf{15}$ horas, con los tiempos originales.
-  \item La máquina 2 no hace su trabajo más rápido (T1, 2 h) porque la máquina 4 también tarda 2 h en T1 y, para M4,
-        cualquier otro trabajo es más lento.
+  \item La máquina 2 no hace su trabajo más rápido (T1, 2 h): T1 se lo queda la máquina 4, que también tarda 2 h en
+        él. Si fuera al revés, M4 tendría que tomar T2 (4 h) y quitárselo a M1, que pasaría a T4 (7 h): el total
+        subiría a 16 horas.
 \end{itemize}
 
 \textbf{Comprobación:} cada máquina tiene un trabajo y cada trabajo una máquina \checkmark. Lo restado:
