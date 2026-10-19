@@ -1,0 +1,954 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{estilo-libro}
+\usetikzlibrary{matrix}
+
+% ---------- Tablas del método húngaro (solo en este documento) ----------
+% Las líneas que tapan ceros se dibujan en una capa de fondo para que los números se sigan leyendo.
+\pgfdeclarelayer{fondo}
+\pgfsetlayers{fondo,main}
+\tikzset{
+  hung/.style={matrix of nodes, row sep=0pt, column sep=0pt,
+    nodes={minimum height=5.8mm, minimum width=#1, anchor=center, inner sep=1pt, font=\small},
+    row 1/.style={nodes={font=\footnotesize}},
+    column 1/.style={anchor=east, nodes={minimum width=0pt, inner sep=3pt}}},
+  hung/.default=9mm,
+  chico/.style={column 1/.append style={nodes={font=\scriptsize}}},
+  tapa/.style={line width=5pt, gray!45, line cap=butt},
+  asig/.style={draw, thick, circle, minimum size=5.6mm, inner sep=0pt},
+  ag/.style={draw, thick, rounded corners=2pt, minimum width=21mm, minimum height=6.5mm, font=\small, fill=white},
+  libre/.style={gray!55},
+  elegido/.style={line width=1.8pt},
+}
+% \marco{matriz}{última fila}{última columna}: cuadrícula de los datos (la fila 1 y la columna 1 son nombres)
+\newcommand{\marco}[3]{%
+  \foreach \i in {2,...,#2} \foreach \j in {2,...,#3}
+    \draw[gray!60, very thin] (#1-\i-\j.north west) rectangle (#1-\i-\j.south east);
+  \draw[semithick] (#1-2-2.north west) rectangle (#1-#2-#3.south east);}
+% \tfila{matriz}{fila}{última columna} y \tcol{matriz}{columna}{última fila}: líneas que tapan ceros
+\newcommand{\tfila}[3]{\draw[tapa] (#1-#2-2.west) -- (#1-#2-#3.east);}
+\newcommand{\tcol}[3]{\draw[tapa] (#1-2-#2.north) -- (#1-#3-#2.south);}
+% \pie{matriz}{texto}: leyenda debajo de una tabla
+\newcommand{\pie}[2]{\node[below=1.5mm of #1, font=\scriptsize\itshape] {#2};}
+% \cero{celda}: cero asignado, encerrado en un círculo
+\newcommand{\cero}[1]{\node[asig] at (#1) {};}
+\newcommand{\flecha}[3]{\draw[-{Stealth[length=2.4mm]}, thick] (#1.east) -- node[above, font=\scriptsize, align=center] {#3} (#1.east -| #2.west);}
+
+\title{\textbf{El problema de asignación}\\[4pt]\large El método de Kuhn-Munkres (método húngaro) y ejercicios resueltos}
+\author{Investigación de Operaciones · Asignación y flujo en redes}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+% =====================================================================
+\part{¿En qué consiste el problema de asignación?}
+
+\section{¿Qué tipo de problema resuelve?}
+
+Muchas veces hay que \textbf{repartir trabajos entre personas} (o máquinas, o vehículos) de modo que
+\textbf{cada uno haga exactamente un trabajo} y \textbf{cada trabajo lo haga exactamente uno}. Como no todos
+son igual de buenos para todo, cada pareja ``agente--tarea'' tiene su propio costo o tiempo. El
+\textbf{problema de asignación} consiste en elegir las parejas para que el \textbf{total sea lo más pequeño posible}
+(o lo más grande, si se trata de ganancias).
+
+Para entenderlo usaremos un ejemplo pequeño, que en la Parte II se resuelve completo:
+
+\begin{ojo}
+Un papá tiene tres hijos, \textbf{John}, \textbf{Karen} y \textbf{Terri}, y tres tareas de la casa:
+\textbf{podar} el césped, \textbf{pintar} la puerta del garaje y \textbf{lavar} los autos. Cada hijo dice cuánto
+cobraría por cada tarea (en dólares):
+\begin{center}\small
+\begin{tabular}{lccc}
+ & Podar & Pintar & Lavar \\
+\midrule
+John  & 15 & 10 & 9 \\
+Karen & 9  & 15 & 10 \\
+Terri & 10 & 12 & 8 \\
+\end{tabular}
+\end{center}
+Cada hijo hace una sola tarea. ¿A quién le toca cada una para que el papá pague lo menos posible?
+\end{ojo}
+
+Todo problema de asignación tiene estas partes:
+
+\begin{center}\small
+\begin{tabular}{p{3.2cm}p{6.4cm}p{4.6cm}}
+\toprule
+\textbf{Parte} & \textbf{Qué es} & \textbf{En el ejemplo} \\
+\midrule
+Agentes & Quienes hacen el trabajo (personas, máquinas, camiones\dots). & John, Karen y Terri \\
+Tareas & Lo que hay que hacer. & Podar, pintar y lavar \\
+Tabla de costos & Lo que cuesta (o tarda) cada agente en cada tarea. & La tabla de arriba \\
+Regla & Cada agente hace una tarea y cada tarea la hace un agente. & Un hijo por tarea \\
+Objetivo & Hacer el total lo más pequeño (o lo más grande) posible. & Pagar lo menos posible \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{¿Por qué no probar todas las combinaciones?}
+Con tres hijos sí se puede: John tiene 3 opciones, Karen las 2 que quedan y Terri la última, así que hay
+$3 \cdot 2 \cdot 1 = 3! = 6$ formas de repartir. Estas son todas:
+
+\begin{center}\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{John -- Karen -- Terri} & \textbf{Costo} & \textbf{John -- Karen -- Terri} & \textbf{Costo} \\
+\midrule
+Podar -- Pintar -- Lavar & $15 + 15 + 8 = 38$ & Pintar -- Lavar -- Podar & $10 + 10 + 10 = 30$ \\
+Podar -- Lavar -- Pintar & $15 + 10 + 12 = 37$ & Lavar -- Podar -- Pintar & $9 + 9 + 12 = 30$ \\
+Pintar -- Podar -- Lavar & $10 + 9 + 8 = \mathbf{27}$ & Lavar -- Pintar -- Podar & $9 + 15 + 10 = 34$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+El problema es que esa cantidad crece rapidísimo. Con $n$ agentes hay $n! = n\cdot(n-1)\cdots 2\cdot 1$
+formas de repartir:
+\[
+4! = 24, \qquad 5! = 120, \qquad 10! = 3\,628\,800, \qquad 20! \approx 2.4 \times 10^{18}.
+\]
+Con 20 trabajadores, una computadora que revisara mil millones de repartos por segundo tardaría unos
+\textbf{77 años}. Hace falta un método que llegue a la mejor respuesta sin revisarlas todas.
+
+% =====================================================================
+\section{La idea del método húngaro}
+
+En 1955 el matemático estadounidense \textbf{Harold Kuhn} publicó un método para resolver este problema a mano.
+Lo llamó \textbf{método húngaro} porque se basa en ideas de dos matemáticos húngaros, \textbf{Dénes König} y
+\textbf{Jenő Egerváry}, de los años treinta. En 1957 \textbf{James Munkres} lo revisó y demostró que siempre
+termina en un tiempo razonable; por eso también se le llama \textbf{algoritmo de Kuhn-Munkres}.
+
+La idea se apoya en una observación muy sencilla. Pase lo que pase, a John hay que pagarle \textbf{por lo menos
+9 dólares}, porque su tarea más barata cuesta 9. Si a toda su fila le quitamos esos 9, lo que queda es
+\textbf{cuánto más cara} sale cada tarea comparada con su mejor opción:
+
+\begin{center}
+\begin{tikzpicture}
+  \matrix (a) [hung=12mm] {
+          & Podar & Pintar & Lavar \\
+    John  & 15 & 10 & 9 \\
+  };
+  \matrix (b) [hung=12mm, right=20mm of a] {
+          & Podar & Pintar & Lavar \\
+    John  & 6 & 1 & 0 \\
+  };
+  \marco{a}{2}{4} \marco{b}{2}{4}
+  \flecha{a}{b}{restar 9\\a toda la fila}
+  \cero{b-2-4}
+\end{tikzpicture}
+\end{center}
+
+Restar la misma cantidad a \textbf{toda una fila} (o a toda una columna) \textbf{no cambia cuál es el mejor reparto}:
+cualquier reparto usa exactamente una casilla de esa fila, así que \textbf{todos} los repartos bajan los mismos
+9 dólares. El orden entre ellos sigue igual. Lo único que cambia es el total, que baja en esa cantidad.
+
+El método húngaro usa esto para \textbf{fabricar ceros}. Va restando hasta que la tabla tenga muchos ceros y,
+cuando se puede elegir \textbf{un cero en cada fila y en cada columna}, ese reparto es el mejor: en la tabla nueva
+cuesta 0 y ningún reparto puede costar menos que 0, porque ya no quedan números negativos.
+
+\noindent\begin{minipage}[c]{0.52\textwidth}\centering
+\begin{tikzpicture}[>=Stealth]
+  \foreach \n/\y in {John/0, Karen/-1.1, Terri/-2.2} \node[ag] (\n) at (0,\y) {\n};
+  \foreach \n/\y in {Podar/0, Pintar/-1.1, Lavar/-2.2} \node[ag] (\n) at (5,\y) {\n};
+  \foreach \a in {John, Karen, Terri} \foreach \t in {Podar, Pintar, Lavar}
+    \draw[libre] (\a.east) -- (\t.west);
+  \draw[elegido] (John.east) -- (Pintar.west); \node[right=1mm of Pintar, font=\scriptsize] {10};
+  \draw[elegido] (Karen.east) -- (Podar.west); \node[right=1mm of Podar, font=\scriptsize] {9};
+  \draw[elegido] (Terri.east) -- (Lavar.west); \node[right=1mm of Lavar, font=\scriptsize] {8};
+  \node[font=\small\bfseries, above=2mm of John] {Agentes};
+  \node[font=\small\bfseries, above=2mm of Podar] {Tareas};
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.44\textwidth}
+El dibujo muestra el problema como \textbf{parejas}: cada línea gris es una pareja posible y las gruesas son las
+que elige el método en el ejemplo. Como cada agente y cada tarea tocan una sola línea gruesa, se cumple la regla.
+\end{minipage}
+\par
+
+% =====================================================================
+\section{Antes de empezar: preparar el problema}
+
+El método húngaro, tal como se explica aquí, necesita tres cosas:
+
+\begin{description}[leftmargin=0pt, itemsep=5pt]
+  \item[Una tabla cuadrada.] Debe haber \textbf{tantos agentes como tareas} (se dice que el problema está
+        \textbf{balanceado}). Si sobran agentes o tareas, se agregan filas o columnas ``ficticias'' con costo 0.
+  \item[Minimizar.] El método busca el total \textbf{más pequeño}. Si los números son ganancias y se quiere el
+        total más grande, primero se convierten en ``lo que se deja de ganar''.
+  \item[Todas las parejas permitidas.] Si una pareja no se puede (un trabajador que no sabe usar una máquina),
+        se le pone un costo enorme, $M$, para que el método nunca la escoja.
+\end{description}
+
+Estos tres arreglos son los \textbf{casos particulares} y se explican con detalle, con sus propios ejercicios, en el
+documento del tema 2. Los tres ejercicios de este documento ya vienen cuadrados, son de minimizar y no tienen
+parejas prohibidas, así que \textbf{no hace falta preparar nada}.
+
+% =====================================================================
+\section{Las palabras que se usan}
+
+\begin{center}\small
+\begin{tabular}{p{3.6cm}p{10.6cm}}
+\toprule
+\textbf{Término} & \textbf{Qué significa} \\
+\midrule
+Agente & Quien hace un trabajo. En la tabla, cada \textbf{fila} es un agente. \\
+Tarea & El trabajo que se reparte. En la tabla, cada \textbf{columna} es una tarea. \\
+Tabla (o matriz) de costos & Los números $c_{ij}$: lo que cuesta que el agente $i$ haga la tarea $j$. \\
+Asignación & Un reparto completo: una tarea para cada agente, sin repetir tareas. \\
+Balanceado & Hay el mismo número de agentes que de tareas (la tabla es cuadrada). \\
+Menor de fila / de columna & El número más pequeño de esa fila o columna. Es lo que se resta en los pasos 1 y 2. \\
+Línea & Una raya que tapa una fila o una columna completa de la tabla. \\
+Cero tapado / sin tapar & Un cero que queda debajo de alguna línea, o que no tiene ninguna encima. \\
+Cruce & Una casilla tapada por \textbf{dos} líneas a la vez (una de fila y una de columna). \\
+$k$ & El número más pequeño que quedó sin tapar. Se usa en el paso 4 para crear ceros nuevos. \\
+Cero asignado & El cero que se escoge para formar una pareja. Se dibuja dentro de un círculo: \asg{0}. \\
+$Z^*$ & El costo total de la mejor asignación, calculado con los números \textbf{originales}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =====================================================================
+\section{Los pasos del método húngaro}\label{sec:algoritmo}
+
+\noindent\begin{minipage}[c]{0.64\textwidth}
+Para que los pasos se entiendan, debajo de cada uno se muestra lo que ocurre en el ejercicio 2 de la Parte II
+(\textbf{Fowle}: tres líderes de proyecto, Terry, Carle y McClymonds, y tres clientes, con los días que tardaría cada
+uno). Se usa ese ejemplo porque necesita los cinco pasos.
+\end{minipage}\hfill
+\begin{minipage}[c]{0.32\textwidth}\centering\small
+$\begin{array}{l|ccc}
+ & \text{C1} & \text{C2} & \text{C3}\\ \hline
+\text{Terry} & 10 & 15 & 9\\
+\text{Carle} & 9 & 18 & 5\\
+\text{McClymonds} & 6 & 14 & 3
+\end{array}$
+\end{minipage}
+\par
+
+\paso{Paso 1. Restar el menor de cada fila}
+A cada número de una fila se le resta el número más pequeño de esa fila. Así cada fila queda con al menos un cero.
+
+\textit{En el ejemplo:} los menores son 9, 5 y 3. La fila de Terry $(10,\ 15,\ 9)$ queda $(1,\ 6,\ 0)$; la de Carle,
+$(4,\ 13,\ 0)$; y la de McClymonds, $(3,\ 11,\ 0)$.
+
+\paso{Paso 2. Restar el menor de cada columna}
+Ahora se hace lo mismo por columnas, sobre la tabla que dejó el paso 1. Así cada columna queda con al menos un cero.
+
+\textit{En el ejemplo:} los menores de las columnas son 1, 6 y 0. La tabla queda con filas $(0,\ 0,\ 0)$,
+$(3,\ 7,\ 0)$ y $(2,\ 5,\ 0)$.
+
+\paso{Paso 3. Tapar todos los ceros con el menor número de líneas}
+Se trazan líneas sobre filas o columnas completas hasta que no quede ningún cero sin tapar, usando
+\textbf{las menos líneas posibles}. Una forma práctica es tapar primero la fila o columna que tenga más ceros.
+\begin{itemize}[itemsep=2pt]
+  \item Si se necesitan \textbf{tantas líneas como filas} ($n$), ya se puede asignar: se salta al paso 5.
+  \item Si alcanzan \textbf{menos de $n$ líneas}, todavía no hay un cero para cada fila: se pasa al paso 4.
+\end{itemize}
+El número mínimo de líneas es justo la cantidad de parejas que se pueden formar con ceros sin repetir fila ni
+columna (lo demostró König). Por eso, con $n$ líneas, siempre hay una asignación completa.
+
+\textit{En el ejemplo:} basta con 2 líneas, la fila de Terry y la columna C3. Como $2 < 3$, falta un cero.
+
+\paso{Paso 4. Ajustar con el menor número sin tapar}
+Se busca $k$, el número más pequeño que \textbf{no} tiene ninguna línea encima. Entonces:
+\begin{enumerate}[itemsep=2pt]
+  \item a todos los números \textbf{sin tapar} se les resta $k$ (así aparece al menos un cero nuevo);
+  \item a los \textbf{cruces} de dos líneas se les suma $k$;
+  \item los números tapados por una sola línea \textbf{no cambian}.
+\end{enumerate}
+Esto equivale a restar $k$ a las filas sin línea y sumar $k$ a las columnas con línea, así que sigue siendo
+``restar a filas y columnas completas'' y no cambia cuál es el mejor reparto. Después se vuelve al paso 3.
+
+\textit{En el ejemplo:}
+
+\begin{center}
+\begin{tikzpicture}
+  \matrix (a) [hung] {
+               & C1 & C2 & C3 \\
+    Terry      & 0 & 0 & 0 \\
+    Carle      & 3 & 7 & 0 \\
+    McClymonds & 2 & 5 & 0 \\
+  };
+  \matrix (b) [hung, right=22mm of a] {
+               & C1 & C2 & C3 \\
+    Terry      & 0 & 0 & 2 \\
+    Carle      & 1 & 5 & 0 \\
+    McClymonds & 0 & 3 & 0 \\
+  };
+  \begin{pgfonlayer}{fondo}
+    \marco{a}{4}{4} \marco{b}{4}{4}
+    \tfila{a}{2}{4} \tcol{a}{4}{4}
+  \end{pgfonlayer}
+  \flecha{a}{b}{$k = 2$}
+\end{tikzpicture}
+\end{center}
+Sin tapar quedaron 3, 7, 2 y 5; el menor es $k = 2$. Esos cuatro bajan 2 (aparece el cero de McClymonds en C1),
+el cruce de la fila de Terry con la columna C3 sube de 0 a 2, y el resto queda igual. Al volver al paso 3 ya hacen
+falta 3 líneas.
+
+\paso{Paso 5. Asignar un cero por fila y por columna}
+Se empieza por una fila (o columna) que tenga \textbf{un solo cero}: ese cero se encierra en un círculo y se tachan
+su fila y su columna, porque esa tarea y ese agente ya están ocupados. Se repite con lo que queda. El costo total se
+calcula sumando los números \textbf{originales} de las casillas elegidas.
+
+\textit{En el ejemplo:} Carle solo tiene un cero (C3); después McClymonds solo tiene libre el de C1, y a Terry le
+queda C2. El total es $15 + 5 + 6 = 26$ días.
+
+\begin{idea}[Resumen de los pasos]
+\begin{enumerate}[leftmargin=*, itemsep=3pt]
+  \item[\textbf{0.}] Preparar: tabla cuadrada, de minimizar y sin parejas prohibidas.
+  \item \textbf{Filas:} a cada fila se le resta su menor.
+  \item \textbf{Columnas:} a cada columna se le resta su menor.
+  \item \textbf{Líneas:} se tapan todos los ceros con el menor número de líneas. Si son $n$, se va al paso 5.
+  \item \textbf{Ajuste:} $k$ = menor número sin tapar; se resta $k$ a lo no tapado y se suma $k$ a los cruces.
+        Se vuelve al paso 3.
+  \item \textbf{Asignar:} un cero por fila y por columna, empezando por las filas o columnas con un solo cero.
+        El total se calcula con los costos originales.
+\end{enumerate}
+\end{idea}
+
+\begin{center}
+\begin{tikzpicture}[node distance=6mm and 9mm, >=Stealth,
+  caja/.style={draw, rounded corners=2pt, fill=gray!8, align=center, minimum width=5.6cm, inner sep=5pt, font=\small},
+  decision/.style={draw, diamond, aspect=2.4, fill=gray!18, align=center, inner sep=1pt, font=\small},
+  fin/.style={draw, rounded corners=8pt, fill=gray!25, align=center, minimum width=2.8cm, inner sep=6pt, font=\small}]
+  \node[caja] (ini) {Preparar la tabla\\ (cuadrada y de minimizar)};
+  \node[caja, below=of ini] (fil) {1. Restar el menor de cada fila};
+  \node[caja, below=of fil] (col) {2. Restar el menor de cada columna};
+  \node[caja, below=of col] (lin) {3. Tapar los ceros con\\ el menor número de líneas};
+  \node[decision, below=of lin] (dec) {¿Hay $n$ líneas?};
+  \node[caja, below=of dec] (asg) {5. Asignar un cero\\ por fila y por columna};
+  \node[fin, below=of asg] (opt) {\textbf{Asignación óptima}};
+  \node[caja, minimum width=3.6cm, right=of dec] (aju) {4. Ajustar con $k$:\\ $-k$ sin tapar, $+k$ en cruces};
+  \draw[->] (ini) -- (fil);
+  \draw[->] (fil) -- (col);
+  \draw[->] (col) -- (lin);
+  \draw[->] (lin) -- (dec);
+  \draw[->] (dec) -- node[right, font=\scriptsize] {sí} (asg);
+  \draw[->] (asg) -- (opt);
+  \draw[->] (dec) -- node[above, font=\scriptsize] {no} (aju);
+  \draw[->] (aju.north) |- node[pos=0.25, right, font=\scriptsize] {otra vez} (lin.east);
+\end{tikzpicture}
+\end{center}
+
+% =====================================================================
+\section{¿Cómo se sabe que terminó?}
+
+\begin{description}[leftmargin=0pt, itemsep=5pt]
+  \item[Solución óptima.] En el paso 3 hacen falta $n$ líneas para tapar los ceros. Entonces se puede elegir un cero
+        en cada fila y en cada columna, y ese reparto es el mejor.
+  \item[Siempre termina.] Cada ajuste del paso 4 hace bajar la suma de la tabla, y la tabla nunca tiene números
+        negativos, así que no puede bajar para siempre. En la práctica bastan muy pocos ajustes.
+  \item[Varias soluciones óptimas.] Si al asignar se puede elegir más de un juego de ceros (por ejemplo, dos filas con
+        dos ceros en las mismas columnas), hay más de un reparto con el mismo costo mínimo.
+  \item[Comprobación rápida.] La suma de todo lo que se restó (los menores de filas y columnas, y en cada ajuste
+        $k \times$ (filas sin línea $-$ columnas con línea)) es igual al costo mínimo. En el ejemplo: filas $9+5+3 = 17$, columnas $1+6+0 = 7$ y el ajuste
+        $2 \times (2 - 1) = 2$; en total $17 + 7 + 2 = 26$.
+\end{description}
+
+% =====================================================================
+\section{Relación con el transporte y la programación lineal}
+
+El problema de asignación es un \textbf{caso especial del problema de transporte}: cada agente es un ``origen'' que
+ofrece 1 unidad de trabajo y cada tarea es un ``destino'' que pide 1 unidad. También se puede escribir como un
+problema de programación lineal. Se usa una variable por pareja:
+\[
+x_{ij} = \begin{cases} 1 & \text{si el agente } i \text{ hace la tarea } j,\\ 0 & \text{si no.}\end{cases}
+\]
+\[
+\begin{aligned}
+\text{Min } Z &= \textstyle\sum_{i}\sum_{j} c_{ij}\, x_{ij}\\
+\text{s.a. } \quad \textstyle\sum_{j} x_{ij} &= 1 \quad \text{para cada agente } i \nota{cada agente hace una tarea}\\
+\textstyle\sum_{i} x_{ij} &= 1 \quad \text{para cada tarea } j \nota{cada tarea la hace un agente}\\
+x_{ij} &\in \{0, 1\}
+\end{aligned}
+\]
+Una propiedad muy útil: si se resuelve con el simplex permitiendo cualquier $x_{ij} \ge 0$, la respuesta sale
+\textbf{sola con ceros y unos}. Aun así, con $n$ agentes el simplex maneja $n^2$ variables y $2n$ restricciones,
+mientras que el método húngaro trabaja directo sobre la tabla de $n \times n$, que es mucho más cómodo.
+
+% =====================================================================
+\section{Ventajas y desventajas}
+
+\begin{center}\small
+\begin{tabular}{p{7.2cm}p{7.2cm}}
+\toprule
+\textbf{Ventajas} & \textbf{Desventajas} \\
+\midrule
+\begin{itemize}[leftmargin=*, itemsep=2pt, topsep=2pt]
+  \item Siempre encuentra la mejor asignación, sin probar las $n!$ combinaciones.
+  \item Solo usa restas y sumas: se hace a mano sobre la misma tabla.
+  \item Es rápido también en computadora (tarda del orden de $n^3$ operaciones).
+  \item Lo restado da una comprobación del costo mínimo.
+\end{itemize}
+&
+\begin{itemize}[leftmargin=*, itemsep=2pt, topsep=2pt]
+  \item Encontrar a ojo el menor número de líneas puede ser difícil en tablas grandes.
+  \item Necesita una tabla cuadrada y de minimizar; los demás casos hay que prepararlos antes.
+  \item Solo sirve si cada agente hace \textbf{una} tarea (si hace varias, hay que duplicar filas).
+\end{itemize}
+\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% =====================================================================
+\part{Ejercicios resueltos}
+\setcounter{section}{0}
+
+Los tres ejercicios siguientes aplican, uno por uno, los pasos de la sección~\ref{sec:algoritmo}. En las tablas, las
+\textbf{franjas grises} son las líneas que tapan ceros y los \textbf{círculos} marcan los ceros asignados. Al final de
+cada ejercicio se dibujan las parejas elegidas.
+
+% =====================================================================
+\section{Los hijos de Joe Klyne: tareas de la casa}
+\textit{Fuente: Taha, Investigación de Operaciones, capítulo del modelo de transporte y sus variantes (modelo de asignación).}
+
+\subsection*{Planteamiento del problema}
+Joe Klyne quiere que sus tres hijos, John, Karen y Terri, ganen algo de dinero. Escoge tres tareas: podar el
+césped, pintar la puerta del garaje y lavar los autos de la familia. Para que no haya peleas, les pide que digan
+cuánto cobrarían por cada tarea:
+
+\begin{center}\small
+\begin{tabular}{lccc}
+\toprule
+ & \textbf{Podar} & \textbf{Pintar} & \textbf{Lavar} \\
+\midrule
+John  & \$15 & \$10 & \$9 \\
+Karen & \$9  & \$15 & \$10 \\
+Terri & \$10 & \$12 & \$8 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La pregunta: \textbf{¿qué tarea le toca a cada hijo para que Joe pague lo menos posible?}
+
+\subsection*{Formulación del modelo}
+\begin{itemize}[itemsep=2pt]
+  \item $x_{ij} = 1$ si el hijo $i$ hace la tarea $j$, y $0$ si no (filas: 1 John, 2 Karen, 3 Terri; columnas:
+        1 podar, 2 pintar, 3 lavar).
+  \item \textbf{Lo que paga Joe:} $Z = 15x_{11} + 10x_{12} + 9x_{13} + 9x_{21} + 15x_{22} + 10x_{23} + 10x_{31} + 12x_{32} + 8x_{33}$.
+  \item \textbf{Cada hijo hace una tarea:} $x_{11} + x_{12} + x_{13} = 1$, y lo mismo para Karen y Terri.
+  \item \textbf{Cada tarea la hace un hijo:} $x_{11} + x_{21} + x_{31} = 1$, y lo mismo para pintar y lavar.
+\end{itemize}
+\textbf{Preparación:} hay 3 hijos y 3 tareas (la tabla es cuadrada) y se quiere pagar lo mínimo, así que se puede
+empezar directamente.
+
+\paso{Paso 1. Restar el menor de cada fila}
+\begin{center}
+\begin{tikzpicture}
+  \matrix (a) [hung=10mm] {
+          & Podar & Pintar & Lavar & \footnotesize menor \\
+    John & 15 & 10 & 9 & \footnotesize 9 \\
+    Karen & 9 & 15 & 10 & \footnotesize 9 \\
+    Terri & 10 & 12 & 8 & \footnotesize 8 \\
+  };
+  \matrix (b) [hung=10mm, anchor=north west] at ([xshift=10mm]a.north east) {
+          & Podar & Pintar & Lavar \\
+    John & 6 & 1 & 0 \\
+    Karen & 0 & 6 & 1 \\
+    Terri & 2 & 4 & 0 \\
+    \footnotesize menor & \footnotesize 0 & \footnotesize 1 & \footnotesize 0 \\
+  };
+  \matrix (c) [hung=10mm, anchor=north west] at ([xshift=10mm]b.north east) {
+          & Podar & Pintar & Lavar \\
+    John & 6 & 0 & 0 \\
+    Karen & 0 & 5 & 1 \\
+    Terri & 2 & 3 & 0 \\
+  };
+  \marco{a}{4}{4} \marco{b}{4}{4} \marco{c}{4}{4}
+  \flecha{a}{b}{paso 1} \flecha{b}{c}{paso 2}
+  \pie{a}{tabla original} \pie{b}{después del paso 1} \pie{c}{después del paso 2}
+\end{tikzpicture}
+\end{center}
+Los menores son 9, 9 y 8 (columna ``menor'' de la tabla original). Por ejemplo,
+$\text{John}: (15,\ 10,\ 9) - 9 = (6,\ 1,\ 0)$: pase lo que pase, John cobra al menos 9.
+Igual con Karen ($-9$) y Terri ($-8$).
+
+\paso{Paso 2. Restar el menor de cada columna}
+Podar y lavar ya tenían un cero (su menor es 0, no cambian). En \textbf{pintar} el menor es 1:
+\[
+(1,\ 6,\ 4) - 1 = (0,\ 5,\ 3) \nota{aparece un cero para John en pintar}
+\]
+
+\paso{Paso 3. Tapar los ceros con el menor número de líneas}
+\begin{center}
+\begin{tikzpicture}
+  \matrix (a) [hung=12mm] {
+          & Podar & Pintar & Lavar \\
+    John  & 6 & 0 & 0 \\
+    Karen & 0 & 5 & 1 \\
+    Terri & 2 & 3 & 0 \\
+  };
+  \matrix (b) [hung=12mm, right=22mm of a] {
+          & Podar & Pintar & Lavar \\
+    John  & 6 & 0 & 0 \\
+    Karen & 0 & 5 & 1 \\
+    Terri & 2 & 3 & 0 \\
+  };
+  \begin{pgfonlayer}{fondo}
+    \marco{a}{4}{4} \marco{b}{4}{4}
+    \tfila{a}{2}{4} \tfila{a}{3}{4} \tfila{a}{4}{4}
+  \end{pgfonlayer}
+  \cero{b-3-2} \cero{b-4-4} \cero{b-2-3}
+  \flecha{a}{b}{asignar}
+  \pie{a}{Paso 3: 3 líneas} \pie{b}{Paso 5: ceros asignados}
+\end{tikzpicture}
+\end{center}
+Los ceros están en (John, pintar), (John, lavar), (Karen, podar) y (Terri, lavar). No alcanza con 2 líneas: Karen
+tiene su cero en podar, que no comparte con nadie, y los otros tres ceros están repartidos entre dos filas y dos
+columnas. Hacen falta \textbf{3 líneas} (aquí, las tres filas).
+\[
+3 \text{ líneas} = 3 \text{ filas} \nota{ya se puede asignar: no hace falta el paso 4}
+\]
+
+\paso{Paso 5. Asignar un cero por fila y por columna}
+En la tabla de la derecha:
+\begin{align*}
+1)\quad & \text{Karen} \to \text{Podar} \nota{único cero de su fila; se tachan su fila y la columna podar}\\
+2)\quad & \text{Terri} \to \text{Lavar} \nota{único cero de su fila; se tachan su fila y la columna lavar}\\
+3)\quad & \text{John} \to \text{Pintar} \nota{su otro cero (lavar) ya está tachado}
+\end{align*}
+
+\subsection*{Resultado}
+\[
+\res{\text{John} \to \text{Pintar},\ \ \text{Karen} \to \text{Podar},\ \ \text{Terri} \to \text{Lavar},\quad Z^* = 27}
+\]
+\begin{itemize}[itemsep=2pt]
+  \item John pinta la puerta (\$10), Karen poda el césped (\$9) y Terri lava los autos (\$8).
+  \item Joe paga en total $10 + 9 + 8 = \mathbf{\$27}$, con los precios originales.
+  \item Karen y Terri hacen su tarea más barata. John cobraría menos por lavar (\$9), pero esa tarea le sale más
+        barata a Terri (\$8), y John es quien menos cobra por pintar (\$10).
+\end{itemize}
+
+\textbf{Comprobación:} cada hijo tiene una tarea y cada tarea un hijo \checkmark. Lo restado suma
+$(9 + 9 + 8) + (0 + 1 + 0) = 27$, igual al costo \checkmark. Y en la tabla de las 6 combinaciones de la Parte I,
+el menor costo es justo 27, el de este reparto \checkmark.
+
+\subsection*{Interpretación gráfica}
+\noindent\begin{minipage}[c]{0.52\textwidth}\centering
+\begin{tikzpicture}[>=Stealth]
+  \foreach \n/\y in {John/0, Karen/-0.95, Terri/-1.9} \node[ag] (\n) at (0,\y) {\n};
+  \foreach \n/\y in {Podar/0, Pintar/-0.95, Lavar/-1.9} \node[ag] (\n) at (5,\y) {\n};
+  \foreach \a in {John, Karen, Terri} \foreach \t in {Podar, Pintar, Lavar}
+    \draw[libre] (\a.east) -- (\t.west);
+  \draw[elegido] (John.east) -- (Pintar.west); \node[right=1mm of Pintar, font=\scriptsize] {\$10};
+  \draw[elegido] (Karen.east) -- (Podar.west); \node[right=1mm of Podar, font=\scriptsize] {\$9};
+  \draw[elegido] (Terri.east) -- (Lavar.west); \node[right=1mm of Lavar, font=\scriptsize] {\$8};
+  \node[font=\small\bfseries, above=2mm of John] {Hijos};
+  \node[font=\small\bfseries, above=2mm of Podar] {Tareas};
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.44\textwidth}
+De las 9 parejas posibles (líneas grises) se usan 3 (gruesas), una por hijo y una por tarea. En palabras: a Joe le
+conviene que \textbf{John pinte, Karen pode y Terri lave}; así paga \$27, que es lo menos posible.
+\end{minipage}
+\par
+
+% =====================================================================
+\section{Fowle Marketing Research: líderes de proyecto y clientes}
+\textit{Fuente: Anderson, Sweeney y Williams, Métodos cuantitativos para los negocios, capítulo del problema de asignación.}
+
+\subsection*{Planteamiento del problema}
+Fowle Marketing Research acaba de recibir pedidos de estudios de mercado de \textbf{tres clientes nuevos}. Tiene
+\textbf{tres líderes de proyecto} libres: Terry, Carle y McClymonds. Cada líder trabajaría con un solo cliente. Según
+su experiencia, los días que tardaría cada uno en terminar cada estudio son:
+
+\begin{center}\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Líder de proyecto} & \textbf{Cliente 1 (C1)} & \textbf{Cliente 2 (C2)} & \textbf{Cliente 3 (C3)} \\
+\midrule
+Terry      & 10 & 15 & 9 \\
+Carle      & 9  & 18 & 5 \\
+McClymonds & 6  & 14 & 3 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La pregunta: \textbf{¿qué líder conviene asignar a cada cliente para que el total de días sea el menor?}
+
+\subsection*{Formulación del modelo}
+\begin{itemize}[itemsep=2pt]
+  \item $x_{ij} = 1$ si el líder $i$ (1 Terry, 2 Carle, 3 McClymonds) atiende al cliente $j$, y $0$ si no.
+  \item \textbf{Días en total:} $Z = 10x_{11} + 15x_{12} + 9x_{13} + 9x_{21} + 18x_{22} + 5x_{23} + 6x_{31} + 14x_{32} + 3x_{33}$.
+  \item \textbf{Cada líder atiende un cliente:} $x_{i1} + x_{i2} + x_{i3} = 1$ para $i = 1, 2, 3$.
+  \item \textbf{Cada cliente tiene un líder:} $x_{1j} + x_{2j} + x_{3j} = 1$ para $j = 1, 2, 3$.
+\end{itemize}
+\textbf{Preparación:} 3 líderes y 3 clientes, de minimizar: no hace falta preparar nada.
+
+\paso{Paso 1. Restar el menor de cada fila}
+\begin{center}
+\begin{tikzpicture}
+  \matrix (a) [hung=8mm, chico] {
+          & C1 & C2 & C3 & \footnotesize menor \\
+    Terry & 10 & 15 & 9 & \footnotesize 9 \\
+    Carle & 9 & 18 & 5 & \footnotesize 5 \\
+    McClymonds & 6 & 14 & 3 & \footnotesize 3 \\
+  };
+  \matrix (b) [hung=8mm, chico, anchor=north west] at ([xshift=8.5mm]a.north east) {
+          & C1 & C2 & C3 \\
+    Terry & 1 & 6 & 0 \\
+    Carle & 4 & 13 & 0 \\
+    McClymonds & 3 & 11 & 0 \\
+    \footnotesize menor & \footnotesize 1 & \footnotesize 6 & \footnotesize 0 \\
+  };
+  \matrix (c) [hung=8mm, chico, anchor=north west] at ([xshift=8.5mm]b.north east) {
+          & C1 & C2 & C3 \\
+    Terry & 0 & 0 & 0 \\
+    Carle & 3 & 7 & 0 \\
+    McClymonds & 2 & 5 & 0 \\
+  };
+  \marco{a}{4}{4} \marco{b}{4}{4} \marco{c}{4}{4}
+  \flecha{a}{b}{paso 1} \flecha{b}{c}{paso 2}
+  \pie{a}{tabla original} \pie{b}{después del paso 1} \pie{c}{después del paso 2}
+\end{tikzpicture}
+\end{center}
+Los menores son 9, 5 y 3, y los tres están en la columna C3: \textbf{los tres líderes son más rápidos con el
+cliente 3}. Por ejemplo, $\text{Terry}: (10,\ 15,\ 9) - 9 = (1,\ 6,\ 0)$.
+
+\paso{Paso 2. Restar el menor de cada columna}
+C1 baja 1: $(1,\ 4,\ 3) - 1 = (0,\ 3,\ 2)$. C2 baja 6: $(6,\ 13,\ 11) - 6 = (0,\ 7,\ 5)$, porque el cliente 2
+le cuesta a cualquiera al menos 6 días más que su mejor opción. C3 ya tenía ceros y no cambia.
+
+\paso{Paso 3. Tapar los ceros con el menor número de líneas}
+\begin{center}
+\begin{tikzpicture}
+  \matrix (a) [hung] {
+               & C1 & C2 & C3 \\
+    Terry      & 0 & 0 & 0 \\
+    Carle      & 3 & 7 & 0 \\
+    McClymonds & 2 & 5 & 0 \\
+  };
+  \matrix (b) [hung, right=22mm of a] {
+               & C1 & C2 & C3 \\
+    Terry      & 0 & 0 & 2 \\
+    Carle      & 1 & 5 & 0 \\
+    McClymonds & 0 & 3 & 0 \\
+  };
+  \begin{pgfonlayer}{fondo}
+    \marco{a}{4}{4} \marco{b}{4}{4}
+    \tfila{a}{2}{4} \tcol{a}{4}{4}
+  \end{pgfonlayer}
+  \flecha{a}{b}{$k = 2$}
+  \pie{a}{Paso 3: 2 líneas} \pie{b}{Paso 4: después del ajuste}
+\end{tikzpicture}
+\end{center}
+La fila de Terry tiene tres ceros y la columna C3 otros tres: con \textbf{2 líneas} se tapan todos.
+\[
+2 \text{ líneas} < 3 \text{ filas} \nota{todavía no: Carle y McClymonds solo tienen ceros en C3}
+\]
+
+\paso{Paso 4. Ajustar con el menor número sin tapar}
+Sin tapar quedaron $3,\ 7,\ 2,\ 5$, así que $k = 2$.
+\begin{align*}
+\text{sin tapar} &: 3 - 2 = 1,\quad 7 - 2 = 5,\quad 2 - 2 = \mathbf{0},\quad 5 - 2 = 3 \nota{nace un cero}\\
+\text{cruce (Terry, C3)} &: 0 + 2 = 2 \nota{tapado por dos líneas: se suma $k$}\\
+\text{tapados una vez} &: \text{no cambian}
+\end{align*}
+
+\paso{Paso 3 (otra vez). Tapar los ceros}
+\begin{center}
+\begin{tikzpicture}
+  \matrix (a) [hung] {
+               & C1 & C2 & C3 \\
+    Terry      & 0 & 0 & 2 \\
+    Carle      & 1 & 5 & 0 \\
+    McClymonds & 0 & 3 & 0 \\
+  };
+  \matrix (b) [hung, right=22mm of a] {
+               & C1 & C2 & C3 \\
+    Terry      & 0 & 0 & 2 \\
+    Carle      & 1 & 5 & 0 \\
+    McClymonds & 0 & 3 & 0 \\
+  };
+  \begin{pgfonlayer}{fondo}
+    \marco{a}{4}{4} \marco{b}{4}{4}
+    \tfila{a}{2}{4} \tfila{a}{3}{4} \tfila{a}{4}{4}
+  \end{pgfonlayer}
+  \cero{b-3-4} \cero{b-4-2} \cero{b-2-3}
+  \flecha{a}{b}{asignar}
+  \pie{a}{Paso 3: 3 líneas} \pie{b}{Paso 5: ceros asignados}
+\end{tikzpicture}
+\end{center}
+Con el cero nuevo hacen falta \textbf{3 líneas} (las tres filas). Como $3 = 3$, ya se puede asignar.
+
+\paso{Paso 5. Asignar un cero por fila y por columna}
+En la tabla de la derecha:
+\begin{align*}
+1)\quad & \text{Carle} \to \text{C3} \nota{único cero de su fila; se tacha la columna C3}\\
+2)\quad & \text{McClymonds} \to \text{C1} \nota{su cero de C3 ya está tachado: le queda C1}\\
+3)\quad & \text{Terry} \to \text{C2} \nota{C1 ya está ocupado: le queda C2}
+\end{align*}
+
+\subsection*{Resultado}
+\[
+\res{\text{Terry} \to \text{C2},\ \ \text{Carle} \to \text{C3},\ \ \text{McClymonds} \to \text{C1},\quad Z^* = 26}
+\]
+\begin{itemize}[itemsep=2pt]
+  \item Terry atiende al cliente 2 (15 días), Carle al cliente 3 (5 días) y McClymonds al cliente 1 (6 días).
+  \item En total, con los tiempos originales: $15 + 5 + 6 = \mathbf{26}$ días.
+  \item El cliente 2 es lento para todos. Comparado con su mejor cliente, Terry es quien menos días pierde con él
+        (6 días más, contra 13 de Carle y 11 de McClymonds); por eso se lo queda Terry.
+\end{itemize}
+
+\textbf{Comprobación:} cada líder tiene un cliente y cada cliente un líder \checkmark. Lo restado:
+filas $9 + 5 + 3 = 17$, columnas $1 + 6 + 0 = 7$; el ajuste restó $2$ a las dos filas sin línea y sumó $2$ a la
+columna con línea, o sea bajó $2 \cdot 2 - 2 = 2$. Total $17 + 7 + 2 = 26$ \checkmark. Las 6 combinaciones dan
+31, 29, 27, \textbf{26}, 32 y 33: el mínimo es 26 \checkmark.
+
+\subsection*{Interpretación gráfica}
+\noindent\begin{minipage}[c]{0.52\textwidth}\centering
+\begin{tikzpicture}[>=Stealth]
+  \foreach \n/\y in {Terry/0, Carle/-0.95, McClymonds/-1.9} \node[ag] (\n) at (0,\y) {\n};
+  \foreach \n/\y in {C1/0, C2/-0.95, C3/-1.9} \node[ag] (\n) at (5,\y) {Cliente \n};
+  \foreach \a in {Terry, Carle, McClymonds} \foreach \t in {C1, C2, C3}
+    \draw[libre] (\a.east) -- (\t.west);
+  \draw[elegido] (Terry.east) -- (C2.west); \node[right=1mm of C2, font=\scriptsize] {15 d};
+  \draw[elegido] (Carle.east) -- (C3.west); \node[right=1mm of C3, font=\scriptsize] {5 d};
+  \draw[elegido] (McClymonds.east) -- (C1.west); \node[right=1mm of C1, font=\scriptsize] {6 d};
+  \node[font=\small\bfseries, above=2mm of Terry] {Líderes};
+  \node[font=\small\bfseries, above=2mm of C1] {Clientes};
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.44\textwidth}
+En palabras: aunque los tres líderes son más rápidos con el cliente 3, solo uno puede quedárselo. Se lo queda
+\textbf{Carle}, que es el que más ganaría con él; McClymonds toma el cliente 1 y Terry el 2. Así se ocupan
+\textbf{26 días} de trabajo, lo mínimo posible.
+\end{minipage}
+\par
+
+% =====================================================================
+\section{Machineco: máquinas y trabajos}
+\textit{Fuente: Winston, Investigación de operaciones: aplicaciones y algoritmos, capítulo de los problemas de transporte y asignación.}
+
+\subsection*{Planteamiento del problema}
+Machineco tiene \textbf{cuatro máquinas} y \textbf{cuatro trabajos} por terminar. Cada máquina debe hacer un solo
+trabajo. Antes de empezar, cada máquina se tiene que preparar, y ese tiempo de preparación (en horas) depende del
+trabajo:
+
+\begin{center}\small
+\begin{tabular}{lcccc}
+\toprule
+ & \textbf{Trabajo 1 (T1)} & \textbf{Trabajo 2 (T2)} & \textbf{Trabajo 3 (T3)} & \textbf{Trabajo 4 (T4)} \\
+\midrule
+Máquina 1 (M1) & 14 & 5  & 8 & 7 \\
+Máquina 2 (M2) & 2  & 12 & 6 & 5 \\
+Máquina 3 (M3) & 7  & 8  & 3 & 9 \\
+Máquina 4 (M4) & 2  & 4  & 6 & 10 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La pregunta: \textbf{¿qué trabajo debe hacer cada máquina para que el tiempo total de preparación sea el menor?}
+Aquí ya hay $4! = 24$ repartos posibles.
+
+\subsection*{Formulación del modelo}
+\begin{itemize}[itemsep=2pt]
+  \item $x_{ij} = 1$ si la máquina $i$ hace el trabajo $j$, y $0$ si no ($i, j = 1, \dots, 4$).
+  \item \textbf{Horas de preparación:} $Z = 14x_{11} + 5x_{12} + 8x_{13} + 7x_{14} + 2x_{21} + \dots + 10x_{44}$
+        (los 16 números de la tabla).
+  \item \textbf{Cada máquina hace un trabajo:} $\sum_j x_{ij} = 1$; \quad \textbf{cada trabajo en una máquina:}
+        $\sum_i x_{ij} = 1$.
+\end{itemize}
+\textbf{Preparación:} 4 máquinas y 4 trabajos, de minimizar: se empieza directamente.
+
+\paso{Paso 1. Restar el menor de cada fila}
+\begin{center}
+\begin{tikzpicture}
+  \matrix (a) [hung=8mm] {
+          & T1 & T2 & T3 & T4 & \footnotesize menor \\
+    M1 & 14 & 5 & 8 & 7 & \footnotesize 5 \\
+    M2 & 2 & 12 & 6 & 5 & \footnotesize 2 \\
+    M3 & 7 & 8 & 3 & 9 & \footnotesize 3 \\
+    M4 & 2 & 4 & 6 & 10 & \footnotesize 2 \\
+  };
+  \matrix (b) [hung=8mm, anchor=north west] at ([xshift=12mm]a.north east) {
+          & T1 & T2 & T3 & T4 \\
+    M1 & 9 & 0 & 3 & 2 \\
+    M2 & 0 & 10 & 4 & 3 \\
+    M3 & 4 & 5 & 0 & 6 \\
+    M4 & 0 & 2 & 4 & 8 \\
+    \footnotesize menor & \footnotesize 0 & \footnotesize 0 & \footnotesize 0 & \footnotesize 2 \\
+  };
+  \matrix (c) [hung=8mm, anchor=north west] at ([xshift=12mm]b.north east) {
+          & T1 & T2 & T3 & T4 \\
+    M1 & 9 & 0 & 3 & 0 \\
+    M2 & 0 & 10 & 4 & 1 \\
+    M3 & 4 & 5 & 0 & 4 \\
+    M4 & 0 & 2 & 4 & 6 \\
+  };
+  \marco{a}{5}{5} \marco{b}{5}{5} \marco{c}{5}{5}
+  \flecha{a}{b}{paso 1} \flecha{b}{c}{paso 2}
+  \pie{a}{tabla original} \pie{b}{después del paso 1} \pie{c}{después del paso 2}
+\end{tikzpicture}
+\end{center}
+Los menores son 5, 2, 3 y 2. Por ejemplo, $\text{M1}: (14,\ 5,\ 8,\ 7) - 5 = (9,\ 0,\ 3,\ 2)$: la máquina 1
+tarda al menos 5 h en prepararse, haga el trabajo que haga.
+
+\paso{Paso 2. Restar el menor de cada columna}
+T1, T2 y T3 ya tienen un cero. Solo cambia T4, cuyo menor es 2:
+\[
+(2,\ 3,\ 6,\ 8) - 2 = (0,\ 1,\ 4,\ 6) \nota{aparece un cero para M1 en T4}
+\]
+
+\paso{Paso 3. Tapar los ceros con el menor número de líneas}
+\begin{center}
+\begin{tikzpicture}
+  \matrix (a) [hung] {
+       & T1 & T2 & T3 & T4 \\
+    M1 & 9 & 0  & 3 & 0 \\
+    M2 & 0 & 10 & 4 & 1 \\
+    M3 & 4 & 5  & 0 & 4 \\
+    M4 & 0 & 2  & 4 & 6 \\
+  };
+  \matrix (b) [hung, right=22mm of a] {
+       & T1 & T2 & T3 & T4 \\
+    M1 & 10 & 0 & 3 & 0 \\
+    M2 & 0  & 9 & 3 & 0 \\
+    M3 & 5  & 5 & 0 & 4 \\
+    M4 & 0  & 1 & 3 & 5 \\
+  };
+  \begin{pgfonlayer}{fondo}
+    \marco{a}{5}{5} \marco{b}{5}{5}
+    \tfila{a}{2}{5} \tfila{a}{4}{5} \tcol{a}{2}{5}
+  \end{pgfonlayer}
+  \flecha{a}{b}{$k = 1$}
+  \pie{a}{Paso 3: 3 líneas} \pie{b}{Paso 4: después del ajuste}
+\end{tikzpicture}
+\end{center}
+La fila M1 tapa sus dos ceros (T2 y T4), la fila M3 tapa el de T3 y la columna T1 tapa los de M2 y M4.
+\[
+3 \text{ líneas} < 4 \text{ filas} \nota{todavía no: M2 y M4 solo tienen ceros en T1, y no pueden compartirlo}
+\]
+
+\paso{Paso 4. Ajustar con el menor número sin tapar}
+Sin tapar quedan las filas M2 y M4 sin la columna T1: $10,\ 4,\ 1$ y $2,\ 4,\ 6$. El menor es $k = 1$.
+\begin{align*}
+\text{M2 sin tapar} &: (10,\ 4,\ 1) - 1 = (9,\ 3,\ \mathbf{0}) \nota{nace un cero: M2 en T4}\\
+\text{M4 sin tapar} &: (2,\ 4,\ 6) - 1 = (1,\ 3,\ 5)\\
+\text{cruces} &: (\text{M1, T1})\ 9 + 1 = 10, \quad (\text{M3, T1})\ 4 + 1 = 5 \nota{dos líneas: se suma $k$}
+\end{align*}
+Los demás números (tapados por una sola línea) no cambian.
+
+\paso{Paso 3 (otra vez). Tapar los ceros}
+\begin{center}
+\begin{tikzpicture}
+  \matrix (a) [hung] {
+       & T1 & T2 & T3 & T4 \\
+    M1 & 10 & 0 & 3 & 0 \\
+    M2 & 0  & 9 & 3 & 0 \\
+    M3 & 5  & 5 & 0 & 4 \\
+    M4 & 0  & 1 & 3 & 5 \\
+  };
+  \matrix (b) [hung, right=22mm of a] {
+       & T1 & T2 & T3 & T4 \\
+    M1 & 10 & 0 & 3 & 0 \\
+    M2 & 0  & 9 & 3 & 0 \\
+    M3 & 5  & 5 & 0 & 4 \\
+    M4 & 0  & 1 & 3 & 5 \\
+  };
+  \begin{pgfonlayer}{fondo}
+    \marco{a}{5}{5} \marco{b}{5}{5}
+    \tfila{a}{2}{5} \tfila{a}{3}{5} \tfila{a}{4}{5} \tfila{a}{5}{5}
+  \end{pgfonlayer}
+  \cero{b-4-4} \cero{b-5-2} \cero{b-3-5} \cero{b-2-3}
+  \flecha{a}{b}{asignar}
+  \pie{a}{Paso 3: 4 líneas} \pie{b}{Paso 5: ceros asignados}
+\end{tikzpicture}
+\end{center}
+Con el cero nuevo hacen falta \textbf{4 líneas} (las cuatro filas). Como $4 = 4$, ya se puede asignar.
+
+\paso{Paso 5. Asignar un cero por fila y por columna}
+En la tabla de la derecha:
+\begin{align*}
+1)\quad & \text{M3} \to \text{T3} \nota{único cero de su fila}\\
+2)\quad & \text{M4} \to \text{T1} \nota{único cero de su fila; se tacha la columna T1}\\
+3)\quad & \text{M2} \to \text{T4} \nota{su cero de T1 ya está tachado: le queda T4}\\
+4)\quad & \text{M1} \to \text{T2} \nota{T4 ya está ocupado: le queda T2}
+\end{align*}
+
+\subsection*{Resultado}
+\[
+\res{M_1 \to T_2,\ \ M_2 \to T_4,\ \ M_3 \to T_3,\ \ M_4 \to T_1,\quad Z^* = 15 \text{ horas}}
+\]
+\begin{itemize}[itemsep=2pt]
+  \item La máquina 1 hace el trabajo 2 (5 h), la 2 el trabajo 4 (5 h), la 3 el trabajo 3 (3 h) y la 4 el trabajo 1 (2 h).
+  \item Tiempo total de preparación: $5 + 5 + 3 + 2 = \mathbf{15}$ horas, con los tiempos originales.
+  \item La máquina 2 no hace su trabajo más rápido (T1, 2 h) porque la máquina 4 también tarda 2 h en T1 y, para M4,
+        cualquier otro trabajo es más lento.
+\end{itemize}
+
+\textbf{Comprobación:} cada máquina tiene un trabajo y cada trabajo una máquina \checkmark. Lo restado:
+filas $5 + 2 + 3 + 2 = 12$, columnas $0 + 0 + 0 + 2 = 2$; el ajuste restó $1$ a dos filas y sumó $1$ a una
+columna, o sea bajó $1$. Total $12 + 2 + 1 = 15$ \checkmark. La calculadora revisó además los 24 repartos posibles
+y ninguno baja de 15 horas \checkmark.
+
+\subsection*{Interpretación gráfica}
+\noindent\begin{minipage}[c]{0.52\textwidth}\centering
+\begin{tikzpicture}[>=Stealth]
+  \foreach \n/\y in {1/0, 2/-0.9, 3/-1.8, 4/-2.7} \node[ag] (M\n) at (0,\y) {Máquina \n};
+  \foreach \n/\y in {1/0, 2/-0.9, 3/-1.8, 4/-2.7} \node[ag] (T\n) at (5,\y) {Trabajo \n};
+  \foreach \a in {1,...,4} \foreach \t in {1,...,4}
+    \draw[libre] (M\a.east) -- (T\t.west);
+  \draw[elegido] (M1.east) -- (T2.west); \node[right=1mm of T2, font=\scriptsize] {5 h};
+  \draw[elegido] (M2.east) -- (T4.west); \node[right=1mm of T4, font=\scriptsize] {5 h};
+  \draw[elegido] (M3.east) -- (T3.west); \node[right=1mm of T3, font=\scriptsize] {3 h};
+  \draw[elegido] (M4.east) -- (T1.west); \node[right=1mm of T1, font=\scriptsize] {2 h};
+  \node[font=\small\bfseries, above=2mm of M1] {Máquinas};
+  \node[font=\small\bfseries, above=2mm of T1] {Trabajos};
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.44\textwidth}
+De las 16 parejas posibles se usan 4. En palabras: Machineco debe preparar \textbf{la máquina 1 para el trabajo 2,
+la 2 para el trabajo 4, la 3 para el trabajo 3 y la 4 para el trabajo 1}; así pierde solo \textbf{15 horas} en
+preparaciones. Este ejercicio muestra por qué a veces hace falta el paso 4: después de restar filas y columnas, dos
+máquinas querían el mismo trabajo, y el ajuste con $k = 1$ abrió una segunda opción barata para una de ellas.
+\end{minipage}
+\par
+
+% =====================================================================
+\bigskip
+\section*{Resumen de los tres ejercicios}
+\begin{center}\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Ejercicio} & \textbf{Tamaño} & \textbf{Repartos} & \textbf{Ajustes} & \textbf{Asignación} & \textbf{Óptimo} \\
+\midrule
+Hijos de Joe Klyne & $3 \times 3$ & 6  & 0 & Pintar, Podar, Lavar & \$27 \\
+Fowle Marketing    & $3 \times 3$ & 6  & 1 ($k = 2$) & C2, C3, C1 & 26 días \\
+Machineco          & $4 \times 4$ & 24 & 1 ($k = 1$) & T2, T4, T3, T1 & 15 horas \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{idea}[Conclusiones]
+\begin{itemize}[itemsep=2pt, leftmargin=*]
+  \item El problema de asignación reparte $n$ tareas entre $n$ agentes, una para cada uno, al menor costo total.
+        Probar las $n!$ combinaciones deja de ser posible muy rápido.
+  \item Restar una misma cantidad a toda una fila o a toda una columna no cambia cuál es el mejor reparto: solo baja
+        el total. El método húngaro usa esto para fabricar ceros.
+  \item Si los ceros se tapan con $n$ líneas, se puede elegir un cero por fila y por columna, y ese reparto es óptimo.
+        Si no, el ajuste con $k$ crea ceros nuevos.
+  \item El costo se calcula siempre con la tabla \textbf{original}, y debe ser igual a la suma de todo lo restado.
+        Es un caso especial del transporte y de la programación lineal, pero mucho más cómodo de resolver.
+\end{itemize}
+\end{idea}
+
+\textbf{Verificación:} los tres ejercicios se comprobaron con la calculadora (\emph{Simplex Arcade}, modo
+Asignación), que reproduce los mismos pasos, líneas y valores de $k$; con el modelo de programación lineal resuelto
+con su simplex y con la librería javascript-lp-solver; y probando todos los repartos. Todos dan 27, 26 y 15.
+
+\section*{Referencias}
+\addcontentsline{toc}{part}{Referencias}
+\begin{itemize}[leftmargin=*, itemsep=0pt, topsep=2pt]
+  \item Anderson, D. R., Sweeney, D. J. y Williams, T. A. \textit{Métodos cuantitativos para los negocios}. Cengage Learning.
+  \item Kuhn, H. W. (1955). The Hungarian method for the assignment problem. \textit{Naval Research Logistics Quarterly}, 2(1--2), 83--97.
+  \item Munkres, J. (1957). Algorithms for the assignment and transportation problems. \textit{Journal of the Society for Industrial and Applied Mathematics}, 5(1), 32--38.
+  \item Taha, H. A. \textit{Investigación de Operaciones}. Pearson.
+  \item Winston, W. L. \textit{Investigación de operaciones: aplicaciones y algoritmos}. Thomson.
+\end{itemize}
+
+\end{document}

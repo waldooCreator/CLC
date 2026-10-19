@@ -95,7 +95,7 @@
       }
     });
 
-    const why = { row: 'único cero de su fila', col: 'único cero de su columna', choice: 'había varios: elijo uno', match: 'búsqueda de ceros independientes' };
+    const why = { row: 'único cero libre de su fila', col: 'único cero libre de su columna', choice: 'había varios: elijo uno', match: 'búsqueda de ceros independientes' };
     const A = [hmatrix(res, res.final, { assigned: res.assignment.map((a) => [a.row, a.col]) })];
     res.order.forEach((o, i) => A.push(row(`${i + 1}) ${res.prep.rows[o.row].label} → ${res.prep.cols[o.col].label}`, `${why[o.reason]} · tacho su fila y su columna`)));
     steps.push({ id: 'a-assign', title: 'Paso 5 · Asignar un cero por fila y columna', lines: A });

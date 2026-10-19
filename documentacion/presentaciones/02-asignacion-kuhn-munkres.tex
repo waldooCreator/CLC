@@ -1,0 +1,348 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{estilo-presentacion}
+\usetikzlibrary{matrix}
+
+% ---------- Tablas del método húngaro (igual que en el documento) ----------
+\pgfdeclarelayer{fondo}
+\pgfsetlayers{fondo,main}
+\tikzset{
+  hung/.style={matrix of nodes, row sep=0pt, column sep=0pt,
+    nodes={minimum height=5.6mm, minimum width=#1, anchor=center, inner sep=1pt, font=\small},
+    row 1/.style={nodes={font=\footnotesize}},
+    column 1/.style={anchor=east, nodes={minimum width=0pt, inner sep=3pt}}},
+  hung/.default=8mm,
+  tapa/.style={line width=5pt, gray!45, line cap=butt},
+  asig/.style={draw, thick, circle, minimum size=5.2mm, inner sep=0pt},
+  ag/.style={draw, thick, rounded corners=2pt, minimum width=19mm, minimum height=6mm, font=\small, fill=white},
+  libre/.style={gray!55},
+  elegido/.style={line width=1.8pt},
+}
+\newcommand{\marco}[3]{%
+  \foreach \i in {2,...,#2} \foreach \j in {2,...,#3}
+    \draw[gray!60, very thin] (#1-\i-\j.north west) rectangle (#1-\i-\j.south east);
+  \draw[semithick] (#1-2-2.north west) rectangle (#1-#2-#3.south east);}
+\newcommand{\tfila}[3]{\draw[tapa] (#1-#2-2.west) -- (#1-#2-#3.east);}
+\newcommand{\tcol}[3]{\draw[tapa] (#1-2-#2.north) -- (#1-#3-#2.south);}
+\newcommand{\cero}[1]{\node[asig] at (#1) {};}
+\newcommand{\flecha}[3]{\draw[-{Stealth[length=2.4mm]}, thick] (#1.east) -- node[above, font=\scriptsize, align=center] {#3} (#1.east -| #2.west);}
+\newcommand{\pie}[2]{\node[below=1.5mm of #1, font=\scriptsize\itshape] {#2};}
+
+\title{El problema de asignación}
+\subtitle{El método de Kuhn-Munkres (método húngaro)}
+\author{Investigación de Operaciones · Asignación y flujo en redes}
+\date{}
+
+\begin{document}
+
+% ---------------------------------------------------------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Integrantes}
+  \vspace{1em}
+  \begin{enumerate}\setlength{\itemsep}{1.2em}
+    \item \rule{0.7\textwidth}{0.4pt}
+    \item \rule{0.7\textwidth}{0.4pt}
+    \item \rule{0.7\textwidth}{0.4pt}
+    \item \rule{0.7\textwidth}{0.4pt}
+    \item \rule{0.7\textwidth}{0.4pt}
+  \end{enumerate}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{¿Qué problema resuelve?}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      Repartir \textbf{tareas} entre \textbf{personas} (o máquinas):
+      \begin{itemize}
+        \item cada uno hace \textbf{exactamente una} tarea,
+        \item cada tarea la hace \textbf{uno solo},
+        \item el \textbf{costo total} debe ser el menor.
+      \end{itemize}
+      \medskip
+      \textbf{Ejemplo:} tres hijos cobran por las tareas de la casa. ¿A quién le toca cada una?
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tabular}{lccc}
+        \toprule
+        & Podar & Pintar & Lavar \\
+        \midrule
+        John  & 15 & 10 & 9 \\
+        Karen & 9  & 15 & 10 \\
+        Terri & 10 & 12 & 8 \\
+        \bottomrule
+      \end{tabular}
+
+      \bigskip
+      ¿Probar todo? Hay $n!$ repartos:\\[2pt]
+      $3! = 6, \quad 10! = 3\,628\,800$\\[2pt]
+      \textbf{Hace falta un método.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Palabras clave}
+  \begin{tabular}{p{0.24\textwidth}p{0.68\textwidth}}
+    \toprule
+    \textbf{Agente / tarea} & Cada fila es un agente; cada columna, una tarea. \\
+    \textbf{Balanceado} & Hay tantos agentes como tareas (tabla cuadrada). \\
+    \textbf{Menor} & El número más pequeño de una fila o columna. \\
+    \textbf{Línea} & Raya que tapa una fila o columna completa. \\
+    \textbf{Cruce} & Casilla tapada por dos líneas. \\
+    \textbf{$k$} & El menor número que quedó sin tapar. \\
+    \textbf{Cero asignado} & El cero elegido para una pareja: \asg{0} \\
+    \bottomrule
+  \end{tabular}
+
+  \bigskip
+  Es un caso especial del \textbf{transporte}: cada agente ofrece 1 y cada tarea pide 1.
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}[fragile]{La idea: fabricar ceros}
+  \centering
+  \begin{tikzpicture}
+    \matrix (a) [hung=12mm] {
+          & Podar & Pintar & Lavar \\
+    John  & 15 & 10 & 9 \\
+    };
+    \matrix (b) [hung=12mm, right=22mm of a] {
+          & Podar & Pintar & Lavar \\
+    John  & 6 & 1 & 0 \\
+    };
+    \marco{a}{2}{4} \marco{b}{2}{4}
+    \flecha{a}{b}{restar 9}
+    \cero{b-2-4}
+  \end{tikzpicture}
+
+  \bigskip
+  \begin{itemize}
+    \item A John hay que pagarle \textbf{al menos 9}, haga lo que haga.
+    \item Restar lo mismo a \textbf{toda una fila o columna} no cambia cuál es el mejor reparto: solo baja el total.
+    \item Si se puede elegir \textbf{un cero en cada fila y columna}, ese reparto es el óptimo.
+  \end{itemize}
+  \medskip
+  {\small Kuhn (1955), con ideas de los húngaros König y Egerváry; Munkres (1957).}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{El método en pasos}
+  \begin{columns}[c]
+    \begin{column}{0.48\textwidth}
+      \begin{enumerate}
+        \item Restar el menor de cada \textbf{fila}.
+        \item Restar el menor de cada \textbf{columna}.
+        \item Tapar los ceros con el \textbf{menor número de líneas}.
+        \item Si hay menos de $n$ líneas: $k$ = menor sin tapar; $-k$ a lo no tapado, $+k$ a los cruces. Volver a 3.
+        \item Con $n$ líneas: \textbf{asignar} un cero por fila y columna.
+      \end{enumerate}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \begin{tikzpicture}[node distance=3.5mm and 6mm, >=Stealth,
+        caja/.style={draw, rounded corners=2pt, fill=gray!8, align=center, minimum width=3.6cm, inner sep=3pt, font=\scriptsize},
+        decision/.style={draw, diamond, aspect=2.4, fill=gray!18, align=center, inner sep=0pt, font=\scriptsize},
+        fin/.style={draw, rounded corners=6pt, fill=gray!25, align=center, inner sep=4pt, font=\scriptsize}]
+        \node[caja] (fil) {1. Restar menor de cada fila};
+        \node[caja, below=of fil] (col) {2. Restar menor de cada columna};
+        \node[caja, below=of col] (lin) {3. Tapar ceros con\\ el menor número de líneas};
+        \node[decision, below=of lin] (dec) {¿$n$ líneas?};
+        \node[caja, below=of dec] (asg) {5. Asignar};
+        \node[fin, below=of asg] (opt) {\textbf{Óptimo}};
+        \node[caja, minimum width=2.2cm, right=of dec] (aju) {4. Ajustar\\ con $k$};
+        \draw[->] (fil) -- (col);
+        \draw[->] (col) -- (lin);
+        \draw[->] (lin) -- (dec);
+        \draw[->] (dec) -- node[right, font=\tiny] {sí} (asg);
+        \draw[->] (asg) -- (opt);
+        \draw[->] (dec) -- node[above, font=\tiny] {no} (aju);
+        \draw[->] (aju.north) |- (lin.east);
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}[fragile]{Ejercicio: Machineco (Winston)}
+  4 máquinas, 4 trabajos; horas de preparación. Hay $4! = 24$ repartos.
+
+  \medskip
+  \centering
+  \begin{tikzpicture}
+    \matrix (a) [hung=6.8mm] {
+       & T1 & T2 & T3 & T4 & \footnotesize menor \\
+    M1 & 14 & 5  & 8 & 7  & \footnotesize 5 \\
+    M2 & 2  & 12 & 6 & 5  & \footnotesize 2 \\
+    M3 & 7  & 8  & 3 & 9  & \footnotesize 3 \\
+    M4 & 2  & 4  & 6 & 10 & \footnotesize 2 \\
+    };
+    \matrix (b) [hung=6.8mm, anchor=north west] at ([xshift=9mm]a.north east) {
+       & T1 & T2 & T3 & T4 \\
+    M1 & 9 & 0  & 3 & 2 \\
+    M2 & 0 & 10 & 4 & 3 \\
+    M3 & 4 & 5  & 0 & 6 \\
+    M4 & 0 & 2  & 4 & 8 \\
+    \footnotesize menor & \footnotesize 0 & \footnotesize 0 & \footnotesize 0 & \footnotesize 2 \\
+    };
+    \matrix (c) [hung=6.8mm, anchor=north west] at ([xshift=9mm]b.north east) {
+       & T1 & T2 & T3 & T4 \\
+    M1 & 9 & 0  & 3 & 0 \\
+    M2 & 0 & 10 & 4 & 1 \\
+    M3 & 4 & 5  & 0 & 4 \\
+    M4 & 0 & 2  & 4 & 6 \\
+    };
+    \marco{a}{5}{5} \marco{b}{5}{5} \marco{c}{5}{5}
+    \flecha{a}{b}{paso 1} \flecha{b}{c}{paso 2}
+    \pie{a}{tabla original} \pie{b}{después del paso 1} \pie{c}{después del paso 2}
+  \end{tikzpicture}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}[fragile]{Machineco: líneas y ajuste}
+  \centering
+  \begin{tikzpicture}
+    \matrix (a) [hung] {
+       & T1 & T2 & T3 & T4 \\
+    M1 & 9 & 0  & 3 & 0 \\
+    M2 & 0 & 10 & 4 & 1 \\
+    M3 & 4 & 5  & 0 & 4 \\
+    M4 & 0 & 2  & 4 & 6 \\
+    };
+    \matrix (b) [hung, right=22mm of a] {
+       & T1 & T2 & T3 & T4 \\
+    M1 & 10 & 0 & 3 & 0 \\
+    M2 & 0  & 9 & 3 & 0 \\
+    M3 & 5  & 5 & 0 & 4 \\
+    M4 & 0  & 1 & 3 & 5 \\
+    };
+    \begin{pgfonlayer}{fondo}
+      \marco{a}{5}{5} \marco{b}{5}{5}
+      \tfila{a}{2}{5} \tfila{a}{4}{5} \tcol{a}{2}{5}
+    \end{pgfonlayer}
+    \flecha{a}{b}{$k = 1$}
+    \pie{a}{3 líneas $<$ 4: todavía no} \pie{b}{después del ajuste}
+  \end{tikzpicture}
+
+  \bigskip
+  \begin{itemize}
+    \item Sin tapar: $10, 4, 1$ y $2, 4, 6$ $\Rightarrow$ $k = 1$.
+    \item Lo no tapado baja 1 (nace un cero en M2--T4); los cruces M1--T1 y M3--T1 suben 1.
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}[fragile]{Machineco: asignación}
+  \begin{columns}[c]
+    \begin{column}{0.42\textwidth}
+      \centering
+      \begin{tikzpicture}
+        \matrix (a) [hung] {
+           & T1 & T2 & T3 & T4 \\
+        M1 & 10 & 0 & 3 & 0 \\
+        M2 & 0  & 9 & 3 & 0 \\
+        M3 & 5  & 5 & 0 & 4 \\
+        M4 & 0  & 1 & 3 & 5 \\
+        };
+        \marco{a}{5}{5}
+        \cero{a-4-4} \cero{a-5-2} \cero{a-3-5} \cero{a-2-3}
+        \pie{a}{4 líneas = 4: ya se puede asignar}
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.54\textwidth}
+      Empezando por las filas con un solo cero:
+      \begin{enumerate}
+        \item M3 $\to$ T3 \quad (3 h)
+        \item M4 $\to$ T1 \quad (2 h)
+        \item M2 $\to$ T4 \quad (5 h)
+        \item M1 $\to$ T2 \quad (5 h)
+      \end{enumerate}
+      \medskip
+      \res{Z^* = 5 + 5 + 3 + 2 = 15 \text{ horas}}
+
+      \medskip
+      {\small Lo restado: $12 + 2 + 1 = 15$ \checkmark}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Los otros dos ejercicios}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Hijos de Joe Klyne} {\small(Taha)}\\[4pt]
+      {\small
+      \begin{tabular}{lccc}
+        \toprule
+        & Podar & Pintar & Lavar \\
+        \midrule
+        John  & 15 & \asg{10} & 9 \\
+        Karen & \asg{9}  & 15 & 10 \\
+        Terri & 10 & 12 & \asg{8} \\
+        \bottomrule
+      \end{tabular}}
+
+      \medskip
+      Sin ajuste: con los pasos 1 y 2 basta.\\[4pt]
+      \res{Z^* = 10 + 9 + 8 = 27 \text{ dólares}}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Fowle Marketing} {\small(Anderson y otros)}\\[4pt]
+      {\small
+      \begin{tabular}{lccc}
+        \toprule
+        Días & C1 & C2 & C3 \\
+        \midrule
+        Terry      & 10 & \asg{15} & 9 \\
+        Carle      & 9  & 18 & \asg{5} \\
+        McClymonds & \asg{6}  & 14 & 3 \\
+        \bottomrule
+      \end{tabular}}
+
+      \medskip
+      Un ajuste con $k = 2$.\\[4pt]
+      \res{Z^* = 15 + 5 + 6 = 26 \text{ días}}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{La calculadora: Machineco}
+  \centering
+  \captura[0.8\textheight]{m6}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{La calculadora: hijos de Joe Klyne}
+  \centering
+  \captura[0.8\textheight]{m4}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Conclusiones}
+  \begin{itemize}\setlength{\itemsep}{0.6em}
+    \item Asignar $n$ tareas a $n$ agentes, una a cada uno, al menor costo.
+    \item Probar las $n!$ combinaciones no es práctico.
+    \item Restar a filas y columnas \textbf{fabrica ceros} sin cambiar el mejor reparto.
+    \item Con $n$ líneas se asigna; si no, el ajuste con $k$ crea ceros nuevos.
+    \item El costo se calcula con la tabla \textbf{original}: 27, 26 y 15.
+    \item Verificado con la calculadora, programación lineal y fuerza bruta.
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Referencias}
+  \small
+  \begin{itemize}\setlength{\itemsep}{0.4em}
+    \item Anderson, Sweeney y Williams. \textit{Métodos cuantitativos para los negocios}. Cengage.
+    \item Kuhn, H. W. (1955). The Hungarian method for the assignment problem. \textit{Naval Research Logistics Quarterly}, 2.
+    \item Munkres, J. (1957). Algorithms for the assignment and transportation problems. \textit{J. SIAM}, 5(1).
+    \item Taha, H. A. \textit{Investigación de Operaciones}. Pearson.
+    \item Winston, W. L. \textit{Investigación de operaciones: aplicaciones y algoritmos}. Thomson.
+  \end{itemize}
+\end{frame}
+
+\end{document}
