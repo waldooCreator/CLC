@@ -228,10 +228,13 @@
     const infeasible = assignment.some((a) => a.forbidden);
     const total = assignment.reduce((acc, a) => (a.dummy || a.value === null ? acc : acc.add(a.value)), Frac.ZERO);
 
-    // Otra asignación con todos ceros = otro óptimo con el mismo valor.
+    // Otra asignación con todos ceros = otro óptimo con el mismo valor. Solo cuenta si cambia alguna
+    // pareja real agente → tarea: intercambiar copias de un mismo agente es el mismo plan con otros nombres.
     let alternative = null;
-    for (const a of assignment) {
-      const m = zeroMatching(final, (i, j) => i === a.row && j === a.col);
+    for (const a of assignment.filter((x) => !x.dummy)) {
+      const agent = rows[a.row].agent;
+      const task = cols[a.col].task;
+      const m = zeroMatching(final, (i, j) => !rows[i].dummy && !cols[j].dummy && rows[i].agent === agent && cols[j].task === task);
       if (m.size === n) {
         alternative = m.rowMatch.map((j, i) => ({ row: i, col: j, rowLabel: rows[i].label, colLabel: cols[j].label }));
         break;

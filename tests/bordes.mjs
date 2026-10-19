@@ -28,6 +28,8 @@ r = assign({ sense: 'min', agents: ['A', 'B'], tasks: ['1', '2', '3', '4'], cost
 ok(sameAll(r) && r.res.total.cmp(F(6)) === 0, 'asignación: capacidad 2 por agente', `${r.res.total}`);
 r = assign({ sense: 'min', agents: ['A', 'B'], tasks: ['1', '2'], cost: [['1', '1'], ['1', '1']] });
 ok(sameAll(r) && r.res.alternative, 'asignación: empate total → óptimos múltiples');
+r = assign({ sense: 'min', agents: ['P1', 'P2', 'P3'], tasks: ['1', '2', '3', '4'], cost: [['820', '810', '840', '960'], ['800', '870', 'M', '920'], ['740', '900', '810', '840']], capacity: ['2', '2', '1'] });
+ok(sameAll(r) && !r.res.alternative, 'asignación: intercambiar copias de un agente no es óptimo múltiple');
 r = assign({ sense: 'min', agents: ['A', 'B', 'C'], tasks: ['1', '2', '3'], cost: [['1/2', '0.25', '3'], ['2', '1/3', '1'], ['0', '5', '2.5']] });
 ok(sameAll(r), 'asignación: fracciones y decimales', `${r.res.total}`);
 
