@@ -176,7 +176,7 @@
       2 fábricas (F1: 50, F2: 40), un centro de distribución (CD) y 2 almacenes (A1 pide 30, A2 pide 60).
       \medskip
 
-      Límites: F1 \ra{} F2 $\le 10$ y CD \ra{} A2 $\le 80$.
+      Límites: F1~\ra{}~F2~$\le 10$ y CD~\ra{}~A2~$\le 80$.
     \end{column}
     \begin{column}{0.62\textwidth}\centering
       \begin{tikzpicture}[x=1.5cm, y=-1.05cm]
@@ -202,6 +202,7 @@
   \begin{columns}[c]
     \begin{column}{0.56\textwidth}
       \small
+      \setlength{\tabcolsep}{4pt}
       \begin{tabular}{clccc}
         \toprule
          & \textbf{Ruta} & \textbf{c/u} & \textbf{Envío} & \textbf{Acum.} \\
@@ -220,7 +221,7 @@
       \centering \res{Z^* = \$49\,000}
     \end{column}
     \begin{column}{0.42\textwidth}\centering
-      \begin{tikzpicture}[x=1.3cm, y=-1.0cm]
+      \begin{tikzpicture}[x=1.2cm, y=-1.0cm]
         \node[fuente] (F1) at (0,0.4) {F1};
         \node[fuente] (F2) at (0,3.2) {F2};
         \node[nodo] (CD) at (2,1.8) {CD};
@@ -322,7 +323,7 @@
 \end{frame}
 
 % 12 --------------------------------------------------------------
-\begin{frame}{La calculadora (modo 5P Costo mín.)}
+\begin{frame}{La calculadora (modo 5P Costo mínimo)}
   \centering
   \captura[0.8\textheight]{m14}
 \end{frame}

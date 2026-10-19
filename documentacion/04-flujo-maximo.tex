@@ -55,7 +55,7 @@ Para entenderlo usaremos un ejemplo pequeño, que en la Parte II se resuelve com
 
 \begin{ojo}
 Una petrolera manda petróleo desde un pozo (\textbf{so}) hasta una refinería (\textbf{si}) por una red de
-oleoductos que pasa por tres estaciones de bombeo (1, 2 y 3). Cada tubería aguanta un máximo de millones de
+oleoductos que pasa por tres estaciones de bombeo (1, 2 y 3). Cada tubería aguanta un máximo, en millones de
 barriles por hora: so$\to$1 aguanta 2, so$\to$2 aguanta 3, 1$\to$2 aguanta 3, 1$\to$3 aguanta 4,
 3$\to$si aguanta 1 y 2$\to$si aguanta 2. ¿Cuánto petróleo puede llegar a la refinería por hora como máximo?
 \end{ojo}
@@ -135,7 +135,8 @@ es el de \textbf{Ford y Fulkerson} (1956), y su idea es muy sencilla:
 En 1972, \textbf{Edmonds y Karp} agregaron una regla para elegir el camino: \textbf{usar siempre el camino con
 menos arcos}. Para encontrarlo se revisa la red ``por capas'': primero los nodos a un paso de la fuente, luego los
 que están a dos pasos, y así sucesivamente (a esto se le llama \textbf{búsqueda en anchura}). Con esta regla el
-método siempre termina y lo hace rápido. Es la versión que usa la calculadora y la que se sigue en este documento.
+método siempre termina, y el número de caminos que hay que buscar depende solo del tamaño de la red, no de lo
+grandes que sean las capacidades. Es la versión que usa la calculadora y la que se sigue en este documento.
 
 % =====================================================================
 \section{¿Por qué a veces hay que devolver flujo?}
@@ -145,7 +146,7 @@ Si primero se manda 1 unidad por $s\to a\to b\to t$, ya no queda ningún camino 
 $b\to t$ están llenos. Parece que el máximo es 1, pero no es cierto: se pueden mandar 2.
 
 \begin{center}
-\begin{tikzpicture}[x=1.6cm, y=1.0cm]
+\begin{tikzpicture}[x=1.9cm, y=1.0cm]
   \node[fuente] (s) at (0,0) {$s$};
   \node[nodo] (a) at (1.5,1) {$a$};
   \node[nodo] (b) at (1.5,-1) {$b$};
@@ -157,8 +158,8 @@ $b\to t$ están llenos. Parece que el máximo es 1, pero no es cierto: se pueden
   \ar[camino]{b}{t}{1/1}
   \node[font=\small, align=center] at (1.5,-2) {Primer camino: $s\to a\to b\to t$\\ (flujo total 1)};
 \end{tikzpicture}
-\qquad\qquad
-\begin{tikzpicture}[x=1.6cm, y=1.0cm]
+\qquad
+\begin{tikzpicture}[x=1.9cm, y=1.0cm]
   \node[fuente] (s) at (0,0) {$s$};
   \node[nodo] (a) at (1.5,1) {$a$};
   \node[nodo] (b) at (1.5,-1) {$b$};
@@ -280,8 +281,8 @@ El flujo total aumenta en esa cantidad. Después se vuelve al paso 1.
   \item[Ya no hay camino.] En el paso 1, la búsqueda por capas no llega al sumidero. Desde ese momento
         ningún camino puede llevar nada más, así que el flujo total es el máximo.
   \item[El corte mínimo sale gratis.] Los nodos a los que \textbf{todavía se llega} desde la fuente forman un lado
-        de la red; los demás, el otro. Todos los arcos que van de un lado al otro están llenos, y la suma de sus
-        capacidades es igual al flujo máximo.
+        de la red; los demás, el otro. Todos los arcos que van del lado de la fuente al otro lado están llenos (y los
+        que vuelven en sentido contrario van vacíos), y la suma de sus capacidades es igual al flujo máximo.
   \item[Red sin camino desde el inicio.] Si ni siquiera con todo en 0 hay camino de la fuente al sumidero, el
         flujo máximo es 0.
   \item[Varias soluciones.] El \emph{valor} del flujo máximo es único, pero a veces hay más de una forma de
@@ -473,7 +474,7 @@ tuberías que entran a si van llenas: \textbf{ya no se llega a si}. El método t
   \ar[usado]{so}{n2}{2/3}
   \ar[libre]{n1}{n2}{0/3}
   \ar[usado]{n1}{n3}{1/4}
-  \ar[usado]{n3}{si}{1/1}
+  \ar[usado, lbl/.style={pos=0.3}]{n3}{si}{1/1}
   \ar[usado]{n2}{si}{2/2}
   \draw[corte] (3.6,0.45) -- (3.6,-2.45) node[below, font=\small] {corte mínimo $= 3$};
   \node[font=\scriptsize] at (2.45,-1.0) {lado de la fuente};
@@ -696,7 +697,8 @@ de litros por hora, son:
 \end{tabular}
 
 \medskip
-\begin{tikzpicture}[x=2.1cm, y=1.1cm]
+\begin{minipage}{\linewidth}\centering
+\begin{tikzpicture}[x=2.1cm, y=1.0cm]
   \nodosTaha
   \ar{t1}{t2}{0/20}
   \ar{t1}{t3}{0/30}
@@ -710,6 +712,7 @@ de litros por hora, son:
 \end{tikzpicture}
 
 Red inicial: todo el flujo en 0.
+\end{minipage}
 \end{center}
 
 La pregunta: \textbf{¿cuánto líquido por hora puede llegar como máximo al nodo 5?}
@@ -730,18 +733,21 @@ Desde 1 se llega en un paso a 2, 3 y 4, y cada uno tiene un arco directo a 5. As
 tienen solo 2 arcos, y se toman en el orden de la lista.
 
 \paso{Camino 1: \ $1 \to 2 \to 5$}
+Es el primero de los tres: por 1$\to$2 caben 20 y por 2$\to$5 caben 30.
 \[
 \delta = \min(\underbrace{20}_{12},\ \underbrace{30}_{25}) = 20,
 \qquad \text{flujo total} = 0 + 20 = 20 \nota{1$\to$2 se llena}
 \]
 
 \paso{Camino 2: \ $1 \to 3 \to 5$}
+1$\to$2 ya está lleno; desde 1 se pasa a 3, y de 3 se va directo a 5.
 \[
 \delta = \min(\underbrace{30}_{13},\ \underbrace{20}_{35}) = 20,
 \qquad \text{flujo total} = 20 + 20 = 40 \nota{3$\to$5 se llena; a 1$\to$3 le quedan 10}
 \]
 
 \paso{Camino 3: \ $1 \to 4 \to 5$}
+Ahora 3$\to$5 también está lleno; queda el camino que pasa por 4.
 \[
 \delta = \min(\underbrace{10}_{14},\ \underbrace{20}_{45}) = 10,
 \qquad \text{flujo total} = 40 + 10 = 50 \nota{1$\to$4 se llena; a 4$\to$5 le quedan 10}
@@ -766,15 +772,15 @@ y desde 4 a 5. El camino tiene 3 arcos:
   \ar[camino, bend left=40, lbl/.style={right}]{t3}{t4}{10/10}
   \ar[libre, bend left=40, lbl/.style={left}]{t4}{t3}{0/5}
   \ar[usado]{t3}{t5}{20/20}
-  \ar[camino]{t4}{t5}{20/20}
+  \ar[camino, lbl/.style={pos=0.62}]{t4}{t5}{20/20}
 \end{tikzpicture}
 
 \small Después del camino 4 ($1\to3\to4\to5$ resaltado). Flujo total 60.
 \end{center}
 
 \paso{¿Hay otro camino?}
-Los tres arcos que salen de la fuente van llenos y a 1 no llega ningún arco por el que se pueda devolver algo.
-Desde 1 \textbf{no se llega a ningún otro nodo}: el método termina.
+Los tres arcos que salen de la fuente van llenos, y como ningún arco llega a 1, tampoco hay flujo que se pueda
+devolver desde 1. Desde 1 \textbf{no se llega a ningún otro nodo}: el método termina.
 
 \subsection*{Resultado}
 \[
@@ -810,7 +816,7 @@ Desde 1 \textbf{no se llega a ningún otro nodo}: el método termina.
   \ar[usado, bend left=40, lbl/.style={right}]{t3}{t4}{10/10}
   \ar[libre, bend left=40, lbl/.style={left}]{t4}{t3}{0/5}
   \ar[usado]{t3}{t5}{20/20}
-  \ar[usado]{t4}{t5}{20/20}
+  \ar[usado, lbl/.style={pos=0.62}]{t4}{t5}{20/20}
   \draw[corte] (0.55,0.1) -- (0.55,-4.1) node[below, font=\small] {corte mínimo $= 60$};
 \end{tikzpicture}
 \end{center}
@@ -847,7 +853,7 @@ Red de Taha & 5 nodos, 9 arcos & 4 & las 3 tuberías que salen de 1 & 60 \\
 \end{itemize}
 \end{idea}
 
-\textbf{Verificación:} los tres ejercicios se comprobaron con la calculadora (\emph{Simplex Arcade}, modo flujo
+\textbf{Verificación:} los tres ejercicios se comprobaron con la calculadora (\emph{Simplex Arcade}, modo 4P Flujo
 máximo, memorias 10, 11 y 12), que reproduce los mismos caminos de aumento, cuellos de botella y cortes. Además,
 cada red se planteó como programación lineal y se resolvió con el Simplex Revisado y con la librería
 javascript-lp-solver: los tres dan el mismo flujo máximo (3, 14 y 60).

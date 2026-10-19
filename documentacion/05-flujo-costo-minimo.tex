@@ -239,7 +239,7 @@ Tramo más limitado & El tramo de la ruta con menos espacio: decide cuánto se p
 % =====================================================================
 \section{Los pasos del método}\label{sec:algoritmo}
 
-Cada iteración responde cuatro preguntas, siempre en el mismo orden. Para que se entiendan, se muestra lo que
+Cada iteración hace cuatro pasos, siempre en el mismo orden. Para que se entiendan, se muestra lo que
 ocurre en el ejemplo de las panaderías.
 
 \paso{Paso 1. ¿Cuánto espacio queda en cada arco?}
@@ -339,8 +339,9 @@ todo: se terminó.
         las capacidades no alcanzan para cubrir lo pedido.
   \item[Problema sin límite.] Si hubiera un recorrido circular de costo negativo y sin límite de capacidad, se podría
         ahorrar sin fin. Con costos positivos (distancias, fletes) esto no ocurre; suele indicar un error en los datos.
-  \item[Empates.] Si dos rutas cuestan lo mismo, se puede tomar cualquiera: el costo final es el mismo, aunque los
-        envíos pueden quedar distintos (hay \textbf{varias soluciones óptimas}). Pasa en los ejercicios 1 y 3.
+  \item[Empates.] Si dos rutas cuestan lo mismo, se puede tomar cualquiera: el costo final es el mismo. A veces
+        el plan final también sale igual (ejercicio 1, ruta 6) y a veces no, porque hay \textbf{varias soluciones
+        óptimas} (ejercicio 3).
 \end{description}
 
 % =====================================================================
@@ -379,7 +380,7 @@ es el camino para llegar. Aquí usamos rutas más baratas porque cada paso se ve
 \setcounter{section}{0}
 
 Los tres ejercicios siguientes aplican, uno por uno, los pasos de la sección~\ref{sec:algoritmo}. Las rutas y los
-números son exactamente los que muestra la calculadora (modo \textsc{5P Costo mín.}, memorias 13, 14 y 15).
+números son exactamente los que muestra la calculadora (modo \textsc{5P Costo mínimo}, memorias 13, 14 y 15).
 
 % =====================================================================
 \section{Powerco: el transporte como flujo a costo mínimo}
@@ -416,7 +417,7 @@ Demanda  & 45 & 20 & 30 & 30 & \\
   \node[sumidero, label=right:{\small $-30$}] (C4) at (3.4,4) {C4};
   \foreach \p/\c/\k in {P1/C1/8, P1/C2/6, P1/C3/10, P1/C4/9, P2/C1/9, P2/C2/12, P2/C3/13, P2/C4/7,
                         P3/C1/14, P3/C2/9, P3/C3/16, P3/C4/5}
-    \draw[arco] (\p) -- node[etq, pos=0.26] {\k} (\c);
+    \draw[arco] (\p) -- node[etq, pos=0.2] {\k} (\c);
 \end{tikzpicture}
 \end{minipage}
 
@@ -919,6 +920,7 @@ B -- C & 1 & E -- T & 7 \\
 \end{tikzpicture}
 \end{minipage}
 
+\medskip
 La pregunta: \textbf{¿cuál es la ruta más corta de la entrada O al mirador T?}
 
 \subsection*{Formulación del modelo}
@@ -998,7 +1000,7 @@ tabla (a D se llega con 8 millas desde B y desde E); la calculadora encuentra un
 \begin{tikzpicture}[x=1.4cm, y=-1.0cm]
   \node[fuente, label=left:{\small $+1$}] (O) at (0,2) {O};
   \node[nodo, label=above:{\scriptsize 2}] (A) at (1.5,0.6) {A};
-  \node[nodo, label=below:{\scriptsize 4}] (B) at (2,2) {B};
+  \node[nodo, label=70:{\scriptsize 4}] (B) at (2,2) {B};
   \node[nodo, label=below:{\scriptsize 4}] (C) at (1.5,3.4) {C};
   \node[nodo, label=above:{\scriptsize 8}] (D) at (3.6,0.9) {D};
   \node[nodo, label=below:{\scriptsize 7}] (E) at (3.6,3.1) {E};
@@ -1052,7 +1054,7 @@ Seervada & ruta más corta & 7 / 24 & 1 & no & 13 millas \\
 \end{idea}
 
 \textbf{Verificación:} los tres ejercicios se comprobaron con la implementación del método (\emph{Simplex Arcade},
-modo 5P Costo mín., memorias 13, 14 y 15), que reproduce las mismas rutas y costos; además, cada problema se planteó como
+modo 5P Costo mínimo, memorias 13, 14 y 15), que reproduce las mismas rutas y costos; además, cada problema se planteó como
 programación lineal y se resolvió con el Simplex Revisado de la calculadora y con la librería javascript-lp-solver, que
 confirman los tres óptimos: 1\,020, 49\,000 y 13.
 

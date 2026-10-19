@@ -145,7 +145,7 @@
 % ---------------------------------------------------------------------
 \begin{frame}{¿Por qué a veces hay que devolver flujo?}
   \centering
-  \begin{tikzpicture}[x=1.5cm, y=1.0cm]
+  \begin{tikzpicture}[x=1.8cm, y=1.0cm]
     \node[fuente] (s) at (0,0) {$s$};
     \node[nodo] (a) at (1.5,1) {$a$};
     \node[nodo] (b) at (1.5,-1) {$b$};
@@ -157,8 +157,8 @@
     \ar[camino]{b}{t}{1/1}
     \node[font=\small, align=center] at (1.5,-1.9) {Mal camino: $s\to a\to b\to t$ (total 1)};
   \end{tikzpicture}
-  \qquad\qquad
-  \begin{tikzpicture}[x=1.5cm, y=1.0cm]
+  \qquad
+  \begin{tikzpicture}[x=1.8cm, y=1.0cm]
     \node[fuente] (s) at (0,0) {$s$};
     \node[nodo] (a) at (1.5,1) {$a$};
     \node[nodo] (b) at (1.5,-1) {$b$};
@@ -284,7 +284,7 @@
         \ar[usado]{C}{E}{4/4}
         \ar[usado]{D}{T}{8/9}
         \ar[usado, lbl/.style={pos=0.25}]{E}{D}{1/1}
-        \ar[usado, lbl/.style={pos=0.65}]{E}{T}{6/6}
+        \ar[usado, lbl/.style={pos=0.8}]{E}{T}{6/6}
         \draw[corte] plot[smooth] coordinates {(2.75,0.2) (2.95,-1.2) (3.4,-1.95) (4.1,-2.3) (4.55,-3.7)};
       \end{tikzpicture}
     \end{column}
@@ -303,7 +303,7 @@
         \ar[usado]{so}{n2}{2/3}
         \ar[libre]{n1}{n2}{0/3}
         \ar[usado]{n1}{n3}{1/4}
-        \ar[usado]{n3}{si}{1/1}
+        \ar[usado, lbl/.style={pos=0.3}]{n3}{si}{1/1}
         \ar[usado]{n2}{si}{2/2}
         \draw[corte] (3.6,0.45) -- (3.6,-2.45);
       \end{tikzpicture}
@@ -315,18 +315,18 @@
     \begin{column}{0.48\textwidth}
       \centering
       \textbf{Red de cinco nodos} {\small(Taha)}\\[2pt]
-      \begin{tikzpicture}[x=1.3cm, y=0.8cm]
+      \begin{tikzpicture}[x=1.55cm, y=0.8cm]
         \nodosTaha
         \ar[usado]{t1}{t2}{20/20}
         \ar[usado]{t1}{t3}{30/30}
-        \ar[usado]{t1}{t4}{10/10}
+        \ar[usado, lbl/.style={pos=0.4}]{t1}{t4}{10/10}
         \ar[libre]{t2}{t3}{0/40}
         \ar[usado]{t2}{t5}{20/30}
         \ar[usado, bend left=40, lbl/.style={right}]{t3}{t4}{10/10}
-        \draw[libre, bend left=40] (t4) to (t3);
+        \ar[libre, bend left=40, lbl/.style={left}]{t4}{t3}{0/5}
         \ar[usado]{t3}{t5}{20/20}
-        \ar[usado]{t4}{t5}{20/20}
-        \draw[corte] (0.5,0.1) -- (0.5,-4.1);
+        \ar[usado, lbl/.style={pos=0.65}]{t4}{t5}{20/20}
+        \draw[corte] (0.42,0.1) -- (0.42,-4.1);
       \end{tikzpicture}
 
       \small 4 caminos: 20 + 20 + 10 + 10.\\
@@ -339,7 +339,8 @@
 % ---------------------------------------------------------------------
 \begin{frame}{Flujo máximo = corte mínimo}
   \begin{block}{Teorema de Ford y Fulkerson}
-    Todo lo que llega al sumidero tiene que cruzar cualquier línea que lo separe de la fuente. Por eso
+    Todo lo que llega al sumidero tiene que cruzar cualquier línea que lo separe de la fuente: ningún flujo
+    supera la capacidad de un corte. El teorema asegura que el mejor flujo llega justo a ese tope:
     \[ \text{flujo máximo} = \text{capacidad del corte mínimo} \quad (\text{el embudo más angosto}). \]
   \end{block}
   \medskip
