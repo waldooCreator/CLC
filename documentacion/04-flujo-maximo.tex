@@ -145,7 +145,7 @@ Si primero se manda 1 unidad por $s\to a\to b\to t$, ya no queda ningún camino 
 $b\to t$ están llenos. Parece que el máximo es 1, pero no es cierto: se pueden mandar 2.
 
 \begin{center}
-\begin{tikzpicture}[x=1.7cm, y=1.2cm]
+\begin{tikzpicture}[x=1.6cm, y=1.0cm]
   \node[fuente] (s) at (0,0) {$s$};
   \node[nodo] (a) at (1.5,1) {$a$};
   \node[nodo] (b) at (1.5,-1) {$b$};
@@ -158,7 +158,7 @@ $b\to t$ están llenos. Parece que el máximo es 1, pero no es cierto: se pueden
   \node[font=\small, align=center] at (1.5,-2) {Primer camino: $s\to a\to b\to t$\\ (flujo total 1)};
 \end{tikzpicture}
 \qquad\qquad
-\begin{tikzpicture}[x=1.7cm, y=1.2cm]
+\begin{tikzpicture}[x=1.6cm, y=1.0cm]
   \node[fuente] (s) at (0,0) {$s$};
   \node[nodo] (a) at (1.5,1) {$a$};
   \node[nodo] (b) at (1.5,-1) {$b$};
@@ -166,7 +166,7 @@ $b\to t$ están llenos. Parece que el máximo es 1, pero no es cierto: se pueden
   \ar[usado]{s}{a}{1/1}
   \ar[camino]{s}{b}{1/1}
   \ar[libre]{a}{b}{0/1}
-  \draw[camino, dashed] (b) to[bend right=35] node[etq, right] {devuelvo 1} (a);
+  \draw[camino, dashed] (b) to[bend left=40] node[etq, left] {devuelvo 1} (a);
   \ar[camino]{a}{t}{1/1}
   \ar[usado]{b}{t}{1/1}
   \node[font=\small, align=center] at (1.5,-2) {Segundo camino: $s\to b\to a\to t$\\ (flujo total 2)};
@@ -254,7 +254,7 @@ El flujo total aumenta en esa cantidad. Después se vuelve al paso 1.
 \end{idea}
 
 \begin{center}
-\begin{tikzpicture}[node distance=6mm and 9mm, >=Stealth,
+\begin{tikzpicture}[node distance=4mm and 9mm, >=Stealth,
   caja/.style={draw, rounded corners=2pt, fill=gray!8, align=center, minimum width=5.6cm, inner sep=5pt, font=\small},
   decision/.style={draw, diamond, aspect=2.4, fill=gray!18, align=center, inner sep=1pt, font=\small},
   fin/.style={draw, rounded corners=8pt, fill=gray!25, align=center, minimum width=2.8cm, inner sep=6pt, font=\small}]
@@ -305,23 +305,16 @@ Es decir, lo máximo que se puede mandar es exactamente lo que deja pasar el emb
 Su capacidad es $1 + 2 = 3$, y como el método logra mandar 3, ya se sabe que no se puede más.
 
 Esto sirve de \textbf{comprobación}: si el flujo encontrado es igual a la capacidad de algún corte, ese flujo es
-el máximo. Además dice \textbf{qué tramos conviene ampliar}: solo agrandar un arco del corte mínimo puede
-aumentar el flujo máximo.
+el máximo. Además dice \textbf{qué tramos conviene ampliar}: agrandar un arco que no cruza el corte mínimo no
+aumenta el flujo máximo.
 
 % =====================================================================
 \section{Relación con la programación lineal}
 
 El flujo máximo también se puede escribir como un problema de programación lineal y resolverse con el Simplex
-Revisado del primer previo. Las variables son los flujos $f_{ij}$:
-\[
-\begin{aligned}
-\text{Max } Z &= \text{lo que sale de la fuente}\\
-\text{s.a. } \quad f_{ij} &\le u_{ij} \quad \text{en cada arco} \nota{no pasarse de la capacidad}\\
-\text{lo que entra a } k - \text{lo que sale de } k &= 0 \quad \text{en cada nodo intermedio } k \nota{conservación}\\
-f_{ij} &\ge 0
-\end{aligned}
-\]
-\textit{En el ejemplo:}
+Revisado del primer previo. Las variables son los flujos $f_{ij}$; se maximiza lo que sale de la fuente, cada
+flujo va entre 0 y su capacidad ($0 \le f_{ij} \le u_{ij}$) y en cada nodo intermedio lo que entra menos lo que
+sale es 0. \textit{En el ejemplo:}
 \[
 \begin{aligned}
 \text{Max } Z &= f_{so,1} + f_{so,2}\\
@@ -386,10 +379,9 @@ Cada tubería tiene un máximo, en millones de barriles por hora:
 \textbf{Capacidad} & 2 & 3 & 3 & 4 & 1 & 2 \\
 \bottomrule
 \end{tabular}
-\end{center}
 
-\begin{center}
-\begin{tikzpicture}[x=2.4cm, y=1.6cm]
+\medskip
+\begin{tikzpicture}[x=2.0cm, y=1.05cm]
   \nodosSunco
   \ar{so}{n1}{0/2}
   \ar{so}{n2}{0/3}
@@ -399,59 +391,34 @@ Cada tubería tiene un máximo, en millones de barriles por hora:
   \ar{n2}{si}{0/2}
 \end{tikzpicture}
 
-\small Red inicial: todo el flujo en 0.
+Red inicial: todo el flujo en 0.
 \end{center}
 
 La pregunta: \textbf{¿cuántos millones de barriles por hora pueden llegar como máximo a la refinería?}
 
 \subsection*{Formulación del modelo}
-\begin{itemize}[itemsep=2pt]
-  \item $f_{ij}$ = millones de barriles por hora que se mandan por la tubería de $i$ a $j$.
-  \item \textbf{Objetivo:} lo que sale del pozo, $Z = f_{so,1} + f_{so,2}$, lo más grande posible.
-  \item \textbf{Capacidad:} cada $f_{ij}$ entre 0 y su capacidad de la tabla.
-  \item \textbf{Conservación:} en las estaciones 1, 2 y 3 lo que entra es igual a lo que sale (es el modelo de PL
-        escrito en la Parte I).
-\end{itemize}
+Sea $f_{ij}$ los millones de barriles por hora que se mandan por la tubería de $i$ a $j$. Se busca que lo que sale
+del pozo, $Z = f_{so,1} + f_{so,2}$, sea lo más grande posible; cada $f_{ij}$ va entre 0 y su capacidad, y en las
+estaciones 1, 2 y 3 lo que entra es igual a lo que sale (el modelo de PL completo está en la Parte I).
 
-% ---------------------------------------------------------------------
-\subsection*{Camino de aumento 1}
-\paso{1. Buscar el camino con menos arcos}
-Desde so se llega en un paso a 1 y a 2. Desde 1 se llega a 3 (a 2 ya se había llegado) y desde 2 se llega a si.
+\subsection*{Caminos de aumento}
+\paso{Camino 1: \ so $\to$ 2 $\to$ si}
+Por capas: desde so se llega a 1 y a 2; desde 1 se llega a 3 y desde 2 se llega a si. El camino más corto
+tiene 2 arcos. Debajo de cada número se indica el tramo y cuánto cabe en él:
 \[
-\text{so} \to 2 \to \text{si} \nota{solo 2 arcos: el más corto}
+\delta = \min(\underbrace{3}_{\text{so}\to2},\ \underbrace{2}_{2\to\text{si}}) = 2,
+\qquad \text{flujo total} = 0 + 2 = 2 \nota{2$\to$si se llena}
 \]
-\paso{2. Cuello de botella}
-\begin{align*}
-\text{so}\to 2 &:\ 3 \nota{todavía caben 3}\\
-2\to\text{si} &:\ 2 \nota{todavía caben 2}
-\end{align*}
-\[
-\delta = \min(3,\ 2) = 2 \nota{el tramo más angosto manda}
-\]
-\paso{3. Aumentar}
-so$\to$2 queda en 2/3 y 2$\to$si en 2/2 (lleno). \quad Flujo total $= 0 + 2 = 2$.
 
-% ---------------------------------------------------------------------
-\subsection*{Camino de aumento 2}
-\paso{1. Buscar el camino con menos arcos}
-Desde so se llega a 1 y a 2. Desde 2 ya no se puede ir a si (está lleno). Desde 1 se llega a 3, y desde 3 a si.
+\paso{Camino 2: \ so $\to$ 1 $\to$ 3 $\to$ si}
+Como 2$\to$si ya está lleno, a si solo se llega desde 3. El camino más corto ahora tiene 3 arcos:
 \[
-\text{so} \to 1 \to 3 \to \text{si} \nota{3 arcos}
+\delta = \min(\underbrace{2}_{\text{so}\to1},\ \underbrace{4}_{1\to3},\ \underbrace{1}_{3\to\text{si}}) = 1,
+\qquad \text{flujo total} = 2 + 1 = 3 \nota{3$\to$si se llena}
 \]
-\paso{2. Cuello de botella}
-\begin{align*}
-\text{so}\to 1 &:\ 2\\
-1\to 3 &:\ 4\\
-3\to\text{si} &:\ 1 \nota{el más angosto}
-\end{align*}
-\[
-\delta = \min(2,\ 4,\ 1) = 1
-\]
-\paso{3. Aumentar}
-so$\to$1 queda en 1/2, 1$\to$3 en 1/4 y 3$\to$si en 1/1 (lleno). \quad Flujo total $= 2 + 1 = 3$.
 
 \begin{center}
-\begin{tikzpicture}[x=2.1cm, y=1.4cm]
+\begin{tikzpicture}[x=1.6cm, y=0.95cm]
   \nodosSunco
   \ar[libre]{so}{n1}{0/2}
   \ar[camino]{so}{n2}{2/3}
@@ -459,10 +426,10 @@ so$\to$1 queda en 1/2, 1$\to$3 en 1/4 y 3$\to$si en 1/1 (lleno). \quad Flujo tot
   \ar[libre]{n1}{n3}{0/4}
   \ar[libre]{n3}{si}{0/1}
   \ar[camino]{n2}{si}{2/2}
-  \node[font=\small] at (2.1,-2.8) {Camino 1: so$\to$2$\to$si (total 2)};
+  \node[font=\small] at (2.1,-2.75) {Camino 1 (total 2)};
 \end{tikzpicture}
-\quad
-\begin{tikzpicture}[x=2.1cm, y=1.4cm]
+\qquad
+\begin{tikzpicture}[x=1.6cm, y=0.95cm]
   \nodosSunco
   \ar[camino]{so}{n1}{1/2}
   \ar[usado]{so}{n2}{2/3}
@@ -470,14 +437,13 @@ so$\to$1 queda en 1/2, 1$\to$3 en 1/4 y 3$\to$si en 1/1 (lleno). \quad Flujo tot
   \ar[camino]{n1}{n3}{1/4}
   \ar[camino]{n3}{si}{1/1}
   \ar[usado]{n2}{si}{2/2}
-  \node[font=\small] at (2.1,-2.8) {Camino 2: so$\to$1$\to$3$\to$si (total 3)};
+  \node[font=\small] at (2.1,-2.75) {Camino 2 (total 3)};
 \end{tikzpicture}
 \end{center}
 
-% ---------------------------------------------------------------------
-\subsection*{¿Hay otro camino?}
+\paso{¿Hay otro camino?}
 Desde so todavía se llega a 1 (cabe 1 más) y a 2 (cabe 1 más); desde 1 se llega a 2 y a 3. Pero las dos
-tuberías que entran a si (3$\to$si y 2$\to$si) van llenas: \textbf{ya no se llega a si}. El método termina.
+tuberías que entran a si van llenas: \textbf{ya no se llega a si}. El método termina.
 
 \subsection*{Resultado}
 \[
@@ -491,8 +457,7 @@ tuberías que entran a si (3$\to$si y 2$\to$si) van llenas: \textbf{ya no se lle
 
 \subsection*{Comprobación}
 \begin{itemize}[itemsep=2pt]
-  \item \textbf{Capacidades:} ningún flujo pasa de su capacidad ($1 \le 2$, $2 \le 3$, $0 \le 3$, $1 \le 4$,
-        $1 \le 1$, $2 \le 2$) \checkmark
+  \item \textbf{Capacidades:} $1 \le 2$, \ $2 \le 3$, \ $0 \le 3$, \ $1 \le 4$, \ $1 \le 1$, \ $2 \le 2$ \checkmark
   \item \textbf{Conservación:} nodo 1: entra 1, sale $0 + 1 = 1$ \checkmark; \ nodo 2: entra $2 + 0 = 2$, sale 2
         \checkmark; \ nodo 3: entra 1, sale 1 \checkmark
   \item \textbf{Sale de so} $1 + 2 = 3$ y \textbf{llega a si} $1 + 2 = 3$ \checkmark
@@ -502,7 +467,7 @@ tuberías que entran a si (3$\to$si y 2$\to$si) van llenas: \textbf{ya no se lle
 
 \subsection*{Interpretación gráfica}
 \begin{center}
-\begin{tikzpicture}[x=2.4cm, y=1.6cm]
+\begin{tikzpicture}[x=2.0cm, y=1.05cm]
   \nodosSunco
   \ar[usado]{so}{n1}{1/2}
   \ar[usado]{so}{n2}{2/3}
@@ -511,13 +476,13 @@ tuberías que entran a si (3$\to$si y 2$\to$si) van llenas: \textbf{ya no se lle
   \ar[usado]{n3}{si}{1/1}
   \ar[usado]{n2}{si}{2/2}
   \draw[corte] (3.6,0.45) -- (3.6,-2.45) node[below, font=\small] {corte mínimo $= 3$};
-  \node[font=\scriptsize, align=center] at (2.1,-1.0) {lado de la fuente};
-  \node[font=\scriptsize] at (4.2,-1.55) {lado del sumidero};
+  \node[font=\scriptsize] at (2.45,-1.0) {lado de la fuente};
+  \node[font=\scriptsize] at (4.3,-1.75) {lado del sumidero};
 \end{tikzpicture}
 \end{center}
 La línea discontinua es el embudo de la red: solo dos tuberías llegan a la refinería y entre las dos aguantan 3.
-Por más que se amplíen las otras tuberías, no puede llegar más petróleo. Si Sunco quisiera aumentar el envío,
-tendría que ampliar 3$\to$si o 2$\to$si. La tubería 1$\to$2 no hace falta con este reparto.
+Por más que se amplíen las demás, no puede llegar más petróleo; para aumentar el envío habría que ampliar
+3$\to$si o 2$\to$si. La tubería 1$\to$2 no hace falta con este reparto.
 
 % =====================================================================
 \newpage
@@ -530,6 +495,7 @@ mirador \textbf{T}, pasando por las estaciones A, B, C, D y E. Para cuidar el pa
 máximo de viajes de tranvía por día:
 
 \begin{center}\small
+\setlength{\tabcolsep}{4.5pt}
 \begin{tabular}{lcccccccccccc}
 \toprule
 \textbf{Camino} & O$\to$A & O$\to$B & O$\to$C & A$\to$B & A$\to$D & B$\to$C & B$\to$D & B$\to$E & C$\to$E & D$\to$T & E$\to$D & E$\to$T \\
@@ -537,10 +503,9 @@ máximo de viajes de tranvía por día:
 \textbf{Viajes} & 5 & 7 & 4 & 1 & 3 & 2 & 4 & 5 & 4 & 9 & 1 & 6 \\
 \bottomrule
 \end{tabular}
-\end{center}
 
-\begin{center}
-\begin{tikzpicture}[x=2.1cm, y=1.55cm]
+\medskip
+\begin{tikzpicture}[x=1.8cm, y=1.12cm]
   \nodosSeervada
   \ar{O}{A}{0/5}
   \ar{O}{B}{0/7}
@@ -556,7 +521,7 @@ máximo de viajes de tranvía por día:
   \ar{E}{T}{0/6}
 \end{tikzpicture}
 
-\small Red inicial: todo el flujo en 0.
+Red inicial: todo el flujo en 0.
 \end{center}
 
 La pregunta: \textbf{¿cuántos viajes de tranvía por día pueden llegar como máximo de O a T?}
@@ -575,35 +540,48 @@ f_{BE} + f_{CE} - f_{ED} - f_{ET} &= 0 \nota{estación E}
 \end{aligned}
 \]
 
-% ---------------------------------------------------------------------
-\subsection*{Camino de aumento 1}
-\paso{1. Buscar el camino con menos arcos}
-Desde O se llega a A, B y C. Desde A se llega a D; desde B, a E. Desde D se llega a T. Hay varios caminos de 3
-arcos; el primero que se completa es el que pasa por A.
-\[
-O \to A \to D \to T
-\]
-\paso{2 y 3. Cuello de botella y aumento}
-\begin{align*}
-O\to A: 5, \quad A\to D: 3, \quad D\to T: 9 \qquad \delta &= \min(5,\ 3,\ 9) = 3 \nota{A$\to$D se llena}
-\end{align*}
-Flujo total $= 0 + 3 = 3$.
+\subsection*{Caminos de aumento}
+Debajo de cada número se indica el tramo; el número es lo que todavía cabe en él.
 
-% ---------------------------------------------------------------------
-\subsection*{Camino de aumento 2}
-\paso{1. Buscar el camino con menos arcos}
-A$\to$D ya está lleno, así que ahora a D se llega desde B.
+\paso{Camino 1: \ $O \to A \to D \to T$}
+Desde O se llega a A, B y C; desde A, a D; desde B, a E; desde D, a T. Hay varios caminos de 3 arcos y el primero
+que se completa es el que pasa por A.
 \[
-O \to B \to D \to T
+\delta = \min(\underbrace{5}_{OA},\ \underbrace{3}_{AD},\ \underbrace{9}_{DT}) = 3,
+\qquad \text{flujo total} = 0 + 3 = 3 \nota{A$\to$D se llena}
 \]
-\paso{2 y 3. Cuello de botella y aumento}
-\begin{align*}
-O\to B: 7, \quad B\to D: 4, \quad D\to T: 6 \qquad \delta &= \min(7,\ 4,\ 6) = 4 \nota{a D$\to$T le quedaban $9 - 3 = 6$}
-\end{align*}
-Flujo total $= 3 + 4 = 7$.
+
+\paso{Camino 2: \ $O \to B \to D \to T$}
+A$\to$D está lleno, así que ahora a D se llega desde B.
+\[
+\delta = \min(\underbrace{7}_{OB},\ \underbrace{4}_{BD},\ \underbrace{6}_{DT}) = 4,
+\qquad \text{flujo total} = 3 + 4 = 7 \nota{a D$\to$T le quedaban $9 - 3 = 6$}
+\]
+
+\paso{Camino 3: \ $O \to B \to E \to T$}
+Los dos arcos que llegan a D desde A y B están llenos. Desde B se llega a E, y desde E a T.
+\[
+\delta = \min(\underbrace{3}_{OB},\ \underbrace{5}_{BE},\ \underbrace{6}_{ET}) = 3,
+\qquad \text{flujo total} = 7 + 3 = 10 \nota{O$\to$B se llena}
+\]
+
+\paso{Camino 4: \ $O \to C \to E \to T$}
+O$\to$B está lleno; desde C se llega a E y desde E a T.
+\[
+\delta = \min(\underbrace{4}_{OC},\ \underbrace{4}_{CE},\ \underbrace{3}_{ET}) = 3,
+\qquad \text{flujo total} = 10 + 3 = 13 \nota{a E$\to$T le quedaban $6 - 3 = 3$}
+\]
+
+\paso{Camino 5: \ $O \to C \to E \to D \to T$}
+E$\to$T está lleno, pero desde E todavía se puede subir a D (E$\to$D aguanta 1) y a D$\to$T le queda espacio.
+Ya no hay caminos de 3 arcos: el más corto tiene 4.
+\[
+\delta = \min(\underbrace{1}_{OC},\ \underbrace{1}_{CE},\ \underbrace{1}_{ED},\ \underbrace{2}_{DT}) = 1,
+\qquad \text{flujo total} = 13 + 1 = 14 \nota{O$\to$C, C$\to$E y E$\to$D se llenan}
+\]
 
 \begin{center}
-\begin{tikzpicture}[x=2.1cm, y=1.55cm]
+\begin{tikzpicture}[x=1.3cm, y=0.95cm]
   \nodosSeervada
   \ar[usado]{O}{A}{3/5}
   \ar[camino]{O}{B}{4/7}
@@ -617,53 +595,10 @@ Flujo total $= 3 + 4 = 7$.
   \ar[camino]{D}{T}{7/9}
   \ar[libre]{E}{D}{0/1}
   \ar[libre]{E}{T}{0/6}
+  \node[font=\small] at (2.5,-4.15) {Después del camino 2 (total 7)};
 \end{tikzpicture}
-
-\small Después del camino 2 (O$\to$B$\to$D$\to$T resaltado). Flujo total 7.
-\end{center}
-
-% ---------------------------------------------------------------------
-\subsection*{Camino de aumento 3}
-\paso{1. Buscar el camino con menos arcos}
-Los dos arcos que entran a D desde A y B ya están llenos. Desde B se llega a E, y desde E a T.
-\[
-O \to B \to E \to T
-\]
-\paso{2 y 3. Cuello de botella y aumento}
-\begin{align*}
-O\to B: 3, \quad B\to E: 5, \quad E\to T: 6 \qquad \delta &= \min(3,\ 5,\ 6) = 3 \nota{O$\to$B se llena: $7 - 4 = 3$}
-\end{align*}
-Flujo total $= 7 + 3 = 10$.
-
-% ---------------------------------------------------------------------
-\subsection*{Camino de aumento 4}
-\paso{1. Buscar el camino con menos arcos}
-O$\to$B está lleno; queda entrar por A o por C. Desde C se llega a E y desde E a T.
-\[
-O \to C \to E \to T
-\]
-\paso{2 y 3. Cuello de botella y aumento}
-\begin{align*}
-O\to C: 4, \quad C\to E: 4, \quad E\to T: 3 \qquad \delta &= \min(4,\ 4,\ 3) = 3 \nota{a E$\to$T le quedaban $6 - 3 = 3$}
-\end{align*}
-Flujo total $= 10 + 3 = 13$.
-
-% ---------------------------------------------------------------------
-\subsection*{Camino de aumento 5}
-\paso{1. Buscar el camino con menos arcos}
-E$\to$T ya está lleno. Pero desde E todavía se puede subir a D (E$\to$D aguanta 1), y a D$\to$T le queda espacio.
-Ya no hay caminos de 3 arcos: el más corto tiene 4.
-\[
-O \to C \to E \to D \to T
-\]
-\paso{2 y 3. Cuello de botella y aumento}
-\begin{align*}
-O\to C: 1, \quad C\to E: 1, \quad E\to D: 1, \quad D\to T: 2 \qquad \delta &= \min(1,\ 1,\ 1,\ 2) = 1
-\end{align*}
-Flujo total $= 13 + 1 = 14$.
-
-\begin{center}
-\begin{tikzpicture}[x=2.1cm, y=1.55cm]
+\hfill
+\begin{tikzpicture}[x=1.3cm, y=0.95cm]
   \nodosSeervada
   \ar[usado]{O}{A}{3/5}
   \ar[usado]{O}{B}{7/7}
@@ -677,13 +612,11 @@ Flujo total $= 13 + 1 = 14$.
   \ar[camino]{D}{T}{8/9}
   \ar[camino]{E}{D}{1/1}
   \ar[usado]{E}{T}{6/6}
+  \node[font=\small] at (2.5,-4.15) {Después del camino 5 (total 14)};
 \end{tikzpicture}
-
-\small Después del camino 5 (O$\to$C$\to$E$\to$D$\to$T resaltado). Flujo total 14.
 \end{center}
 
-% ---------------------------------------------------------------------
-\subsection*{¿Hay otro camino?}
+\paso{¿Hay otro camino?}
 Desde O todavía se llega a A (caben 2 más); desde A a B (A$\to$B aguanta 1); desde B a C y a E. Pero todos los
 arcos que salen de ese grupo hacia D o T están llenos: A$\to$D, B$\to$D, E$\to$D y E$\to$T. \textbf{Ya no se llega
 a T}. El método termina.
@@ -693,6 +626,7 @@ a T}. El método termina.
 \res{\text{Flujo máximo} = 14}
 \]
 \begin{center}\small
+\setlength{\tabcolsep}{4.5pt}
 \begin{tabular}{lcccccccccccc}
 \toprule
 \textbf{Camino} & O$\to$A & O$\to$B & O$\to$C & A$\to$B & A$\to$D & B$\to$C & B$\to$D & B$\to$E & C$\to$E & D$\to$T & E$\to$D & E$\to$T \\
@@ -714,28 +648,28 @@ Se pueden programar como máximo \textbf{14 viajes de tranvía por día} de la e
         D: entra $3 + 4 + 1 = 8$, sale 8 \checkmark; \
         E: entra $3 + 4 = 7$, sale $1 + 6 = 7$ \checkmark
   \item \textbf{Sale de O} $3 + 7 + 4 = 14$ y \textbf{llega a T} $8 + 6 = 14$ \checkmark
-  \item \textbf{Corte mínimo:} desde O se alcanzan $\{O, A, B, C, E\}$. Cruzan A$\to$D (3), B$\to$D (4),
+  \item \textbf{Corte mínimo:} desde O se alcanzan \{O, A, B, C, E\}. Cruzan A$\to$D (3), B$\to$D (4),
         E$\to$D (1) y E$\to$T (6): capacidad $3 + 4 + 1 + 6 = 14 =$ flujo máximo \checkmark
 \end{itemize}
 
 \subsection*{Interpretación gráfica}
 \begin{center}
-\begin{tikzpicture}[x=2.1cm, y=1.55cm]
+\begin{tikzpicture}[x=1.8cm, y=1.12cm]
   \nodosSeervada
   \ar[usado]{O}{A}{3/5}
   \ar[usado]{O}{B}{7/7}
   \ar[usado]{O}{C}{4/4}
   \ar[libre]{A}{B}{0/1}
-  \ar[usado]{A}{D}{3/3}
+  \ar[usado, lbl/.style={pos=0.35}]{A}{D}{3/3}
   \ar[libre]{B}{C}{0/2}
-  \ar[usado, lbl/.style={pos=0.6}]{B}{D}{4/4}
+  \ar[usado, lbl/.style={pos=0.4}]{B}{D}{4/4}
   \ar[usado, lbl/.style={pos=0.6}]{B}{E}{3/5}
   \ar[usado]{C}{E}{4/4}
   \ar[usado]{D}{T}{8/9}
-  \ar[usado]{E}{D}{1/1}
-  \ar[usado]{E}{T}{6/6}
-  \draw[corte] plot[smooth] coordinates {(2.55,0.15) (2.8,-1.2) (3.4,-2.05) (4.1,-2.35) (4.6,-3.6)};
-  \node[font=\small, right] at (4.6,-3.6) {corte mínimo $= 14$};
+  \ar[usado, lbl/.style={pos=0.25}]{E}{D}{1/1}
+  \ar[usado, lbl/.style={pos=0.65}]{E}{T}{6/6}
+  \draw[corte] plot[smooth] coordinates {(2.75,0.2) (2.95,-1.2) (3.4,-1.95) (4.1,-2.3) (4.55,-3.7)};
+  \node[font=\small, right] at (4.55,-3.7) {corte mínimo $= 14$};
 \end{tikzpicture}
 \end{center}
 La línea discontinua deja de un lado a O, A, B, C y E, y del otro a D y T. Los cuatro caminos que la cruzan van
@@ -744,7 +678,6 @@ B$\to$E (3 de 5) tienen espacio de sobra, así que ampliarlos no serviría. Para
 alguno de los cuatro caminos del corte.
 
 % =====================================================================
-\newpage
 \section{Red de Taha: cinco nodos}
 \textit{Fuente: adaptado de Taha, Investigación de Operaciones, capítulo de modelos de redes (flujo máximo).}
 
@@ -761,23 +694,22 @@ de litros por hora, son:
 \textbf{Capacidad} & 20 & 30 & 10 & 40 & 30 & 10 & 20 & 5 & 20 \\
 \bottomrule
 \end{tabular}
-\end{center}
 
-\begin{center}
-\begin{tikzpicture}[x=2.4cm, y=1.35cm]
+\medskip
+\begin{tikzpicture}[x=2.1cm, y=1.1cm]
   \nodosTaha
   \ar{t1}{t2}{0/20}
   \ar{t1}{t3}{0/30}
   \ar{t1}{t4}{0/10}
   \ar{t2}{t3}{0/40}
   \ar{t2}{t5}{0/30}
-  \ar[arco, bend left=30]{t3}{t4}{0/10}
-  \ar[arco, bend left=30]{t4}{t3}{0/5}
+  \ar[arco, bend left=40, lbl/.style={right}]{t3}{t4}{0/10}
+  \ar[arco, bend left=40, lbl/.style={left}]{t4}{t3}{0/5}
   \ar{t3}{t5}{0/20}
   \ar{t4}{t5}{0/20}
 \end{tikzpicture}
 
-\small Red inicial: todo el flujo en 0.
+Red inicial: todo el flujo en 0.
 \end{center}
 
 La pregunta: \textbf{¿cuánto líquido por hora puede llegar como máximo al nodo 5?}
@@ -793,61 +725,46 @@ f_{14} + f_{34} - f_{43} - f_{45} &= 0 \nota{nodo 4}
 \end{aligned}
 \]
 
-% ---------------------------------------------------------------------
-\subsection*{Caminos de aumento 1, 2 y 3}
-\paso{1. Buscar el camino con menos arcos}
-Desde 1 se llega en un paso a 2, 3 y 4, y cada uno de ellos tiene un arco directo a 5. Así que los tres primeros
-caminos tienen solo 2 arcos, y se toman en el orden de la lista:
+\subsection*{Caminos de aumento}
+Desde 1 se llega en un paso a 2, 3 y 4, y cada uno tiene un arco directo a 5. Así que los tres primeros caminos
+tienen solo 2 arcos, y se toman en el orden de la lista.
 
-\begin{center}\small
-\begin{tabular}{clccc}
-\toprule
-\textbf{Camino} & \textbf{Recorrido} & \textbf{Lo que cabe en cada tramo} & \textbf{Cuello de botella} & \textbf{Flujo total} \\
-\midrule
-1 & $1 \to 2 \to 5$ & $1\to2$: 20, \ $2\to5$: 30 & $\min(20, 30) = 20$ & 20 \\
-2 & $1 \to 3 \to 5$ & $1\to3$: 30, \ $3\to5$: 20 & $\min(30, 20) = 20$ & 40 \\
-3 & $1 \to 4 \to 5$ & $1\to4$: 10, \ $4\to5$: 20 & $\min(10, 20) = 10$ & 50 \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\paso{2 y 3. Qué cambió}
-\begin{align*}
-1\to2 &:\ 20/20 \nota{lleno después del camino 1}\\
-3\to5 &:\ 20/20 \nota{lleno después del camino 2; a $1\to3$ le quedan 10}\\
-1\to4 &:\ 10/10 \nota{lleno después del camino 3; a $4\to5$ le quedan 10}
-\end{align*}
-
-% ---------------------------------------------------------------------
-\subsection*{Camino de aumento 4}
-\paso{1. Buscar el camino con menos arcos}
-Desde 1 solo se llega a 3 (1$\to$2 y 1$\to$4 están llenos). Desde 3 no se puede ir directo a 5 (lleno), pero sí a 4,
-y desde 4 a 5.
+\paso{Camino 1: \ $1 \to 2 \to 5$}
 \[
-1 \to 3 \to 4 \to 5 \nota{3 arcos}
+\delta = \min(\underbrace{20}_{12},\ \underbrace{30}_{25}) = 20,
+\qquad \text{flujo total} = 0 + 20 = 20 \nota{1$\to$2 se llena}
 \]
-\paso{2. Cuello de botella}
-\begin{align*}
-1\to3 &:\ 30 - 20 = 10\\
-3\to4 &:\ 10\\
-4\to5 &:\ 20 - 10 = 10
-\end{align*}
+
+\paso{Camino 2: \ $1 \to 3 \to 5$}
 \[
-\delta = \min(10,\ 10,\ 10) = 10 \nota{los tres tramos se llenan a la vez}
+\delta = \min(\underbrace{30}_{13},\ \underbrace{20}_{35}) = 20,
+\qquad \text{flujo total} = 20 + 20 = 40 \nota{3$\to$5 se llena; a 1$\to$3 le quedan 10}
 \]
-\paso{3. Aumentar}
-1$\to$3 queda en 30/30, 3$\to$4 en 10/10 y 4$\to$5 en 20/20. \quad Flujo total $= 50 + 10 = 60$.
+
+\paso{Camino 3: \ $1 \to 4 \to 5$}
+\[
+\delta = \min(\underbrace{10}_{14},\ \underbrace{20}_{45}) = 10,
+\qquad \text{flujo total} = 40 + 10 = 50 \nota{1$\to$4 se llena; a 4$\to$5 le quedan 10}
+\]
+
+\paso{Camino 4: \ $1 \to 3 \to 4 \to 5$}
+Desde 1 solo se llega a 3 (1$\to$2 y 1$\to$4 están llenos). Desde 3 no se puede ir directo a 5, pero sí a 4,
+y desde 4 a 5. El camino tiene 3 arcos:
+\[
+\delta = \min(\underbrace{10}_{13},\ \underbrace{10}_{34},\ \underbrace{10}_{45}) = 10,
+\qquad \text{flujo total} = 50 + 10 = 60 \nota{los tres tramos se llenan a la vez}
+\]
 
 \begin{center}
-\begin{tikzpicture}[x=2.4cm, y=1.35cm]
+\begin{tikzpicture}[x=2.1cm, y=1.1cm]
   \nodosTaha
   \ar[usado]{t1}{t2}{20/20}
   \ar[camino]{t1}{t3}{30/30}
   \ar[usado]{t1}{t4}{10/10}
   \ar[libre]{t2}{t3}{0/40}
   \ar[usado]{t2}{t5}{20/30}
-  \ar[camino, bend left=30]{t3}{t4}{10/10}
-  \ar[libre, bend left=30]{t4}{t3}{0/5}
+  \ar[camino, bend left=40, lbl/.style={right}]{t3}{t4}{10/10}
+  \ar[libre, bend left=40, lbl/.style={left}]{t4}{t3}{0/5}
   \ar[usado]{t3}{t5}{20/20}
   \ar[camino]{t4}{t5}{20/20}
 \end{tikzpicture}
@@ -855,10 +772,9 @@ y desde 4 a 5.
 \small Después del camino 4 ($1\to3\to4\to5$ resaltado). Flujo total 60.
 \end{center}
 
-% ---------------------------------------------------------------------
-\subsection*{¿Hay otro camino?}
-Los tres arcos que salen de la fuente (1$\to$2, 1$\to$3 y 1$\to$4) van llenos y a 1 no entra ningún arco que
-permita devolver nada útil. Desde 1 \textbf{no se llega a ningún otro nodo}: el método termina.
+\paso{¿Hay otro camino?}
+Los tres arcos que salen de la fuente van llenos y a 1 no llega ningún arco por el que se pueda devolver algo.
+Desde 1 \textbf{no se llega a ningún otro nodo}: el método termina.
 
 \subsection*{Resultado}
 \[
@@ -884,18 +800,18 @@ permita devolver nada útil. Desde 1 \textbf{no se llega a ningún otro nodo}: e
 
 \subsection*{Interpretación gráfica}
 \begin{center}
-\begin{tikzpicture}[x=2.4cm, y=1.35cm]
+\begin{tikzpicture}[x=2.1cm, y=1.1cm]
   \nodosTaha
-  \ar[usado]{t1}{t2}{20/20}
-  \ar[usado]{t1}{t3}{30/30}
-  \ar[usado]{t1}{t4}{10/10}
+  \ar[usado, lbl/.style={pos=0.6}]{t1}{t2}{20/20}
+  \ar[usado, lbl/.style={pos=0.6}]{t1}{t3}{30/30}
+  \ar[usado, lbl/.style={pos=0.6}]{t1}{t4}{10/10}
   \ar[libre]{t2}{t3}{0/40}
   \ar[usado]{t2}{t5}{20/30}
-  \ar[usado, bend left=30]{t3}{t4}{10/10}
-  \ar[libre, bend left=30]{t4}{t3}{0/5}
+  \ar[usado, bend left=40, lbl/.style={right}]{t3}{t4}{10/10}
+  \ar[libre, bend left=40, lbl/.style={left}]{t4}{t3}{0/5}
   \ar[usado]{t3}{t5}{20/20}
   \ar[usado]{t4}{t5}{20/20}
-  \draw[corte] (0.62,0.05) -- (0.62,-4.05) node[below, font=\small] {corte mínimo $= 60$};
+  \draw[corte] (0.55,0.1) -- (0.55,-4.1) node[below, font=\small] {corte mínimo $= 60$};
 \end{tikzpicture}
 \end{center}
 Aquí el embudo está \textbf{justo a la salida de la fuente}: de 1 solo salen tres tuberías y entre todas aguantan
@@ -903,17 +819,16 @@ $20 + 30 + 10 = 60$. Dentro de la red sobra espacio (2$\to$3 ni se usa y 2$\to$5
 ayuda porque no se puede meter más de lo que sale de 1. Para mandar más habría que ampliar las tuberías que salen
 de la fuente.
 
-% =====================================================================
-\newpage
+\bigskip
 \section*{Resumen de los tres ejercicios}
-\begin{center}
-\begin{tabular}{lcccc}
+\begin{center}\small
+\begin{tabular}{lccp{5.0cm}c}
 \toprule
-\textbf{Ejercicio} & \textbf{Red} & \textbf{Caminos de aumento} & \textbf{Corte mínimo} & \textbf{Flujo máximo} \\
+\textbf{Ejercicio} & \textbf{Red} & \textbf{Caminos} & \textbf{Corte mínimo} & \textbf{Flujo máximo} \\
 \midrule
-Sunco Oil & 5 nodos, 6 arcos & 2 & entradas a si & 3 \\
-Parque Seervada & 7 nodos, 12 arcos & 5 & A$\to$D, B$\to$D, E$\to$D, E$\to$T & 14 \\
-Red de Taha & 5 nodos, 9 arcos & 4 & salidas de 1 & 60 \\
+Sunco Oil & 5 nodos, 6 arcos & 2 & las 2 tuberías que llegan a si & 3 \\
+Parque Seervada & 7 nodos, 12 arcos & 5 & A$\to$D, B$\to$D, E$\to$D y E$\to$T & 14 \\
+Red de Taha & 5 nodos, 9 arcos & 4 & las 3 tuberías que salen de 1 & 60 \\
 \bottomrule
 \end{tabular}
 \end{center}

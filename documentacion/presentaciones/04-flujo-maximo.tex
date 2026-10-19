@@ -1,0 +1,394 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{estilo-presentacion}
+
+% \ar[estilo]{desde}{hasta}{etiqueta}: arco con etiqueta flujo/capacidad
+\tikzset{lbl/.style={}, libre/.style={arco, gray!70}, usado/.style={-{Stealth[length=2.2mm]}, very thick}}
+\newcommand{\ar}[4][arco]{\draw[#1] (#2) to node[etq, lbl] {#4} (#3);}
+\newcommand{\nodosSunco}{%
+  \node[fuente]   (so) at (0,-1)   {so};
+  \node[nodo]     (n1) at (1.4,0)  {1};
+  \node[nodo]     (n2) at (1.4,-2) {2};
+  \node[nodo]     (n3) at (2.8,0)  {3};
+  \node[sumidero] (si) at (4.2,-1) {si};}
+\newcommand{\nodosSeervada}{%
+  \node[fuente]   (O) at (0,-2)     {O};
+  \node[nodo]     (A) at (1.5,-0.6) {A};
+  \node[nodo]     (B) at (2,-2)     {B};
+  \node[nodo]     (C) at (1.5,-3.4) {C};
+  \node[nodo]     (D) at (3.6,-0.9) {D};
+  \node[nodo]     (E) at (3.6,-3.1) {E};
+  \node[sumidero] (T) at (5,-2)     {T};}
+\newcommand{\nodosTaha}{%
+  \node[fuente]   (t1) at (0,-2)     {1};
+  \node[nodo]     (t2) at (1.8,-0.4) {2};
+  \node[nodo]     (t3) at (1.8,-2)   {3};
+  \node[nodo]     (t4) at (1.8,-3.6) {4};
+  \node[sumidero] (t5) at (3.6,-2)   {5};}
+
+\title{El problema de flujo máximo}
+\subtitle{Ford-Fulkerson con la regla de Edmonds y Karp}
+\author{Investigación de Operaciones · Flujo en redes}
+\date{}
+
+\begin{document}
+
+% ---------------------------------------------------------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Integrantes}
+  \vspace{1em}
+  \begin{enumerate}\setlength{\itemsep}{1.2em}
+    \item \rule{0.7\textwidth}{0.4pt}
+    \item \rule{0.7\textwidth}{0.4pt}
+    \item \rule{0.7\textwidth}{0.4pt}
+    \item \rule{0.7\textwidth}{0.4pt}
+    \item \rule{0.7\textwidth}{0.4pt}
+  \end{enumerate}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{¿Qué problema resuelve?}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      Muchas cosas viajan por \textbf{redes}, y cada tramo tiene un \textbf{límite}:
+      \begin{itemize}
+        \item agua o petróleo por tuberías,
+        \item carros por las calles,
+        \item datos por cables,
+        \item personas al evacuar un edificio.
+      \end{itemize}
+      \medskip
+      \begin{block}{La pregunta}
+        ¿Cuánto es lo \textbf{máximo} que se puede enviar de un punto de salida a uno de llegada sin pasarse
+        del límite de ningún tramo?
+      \end{block}
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \centering
+      \begin{tikzpicture}[x=1.4cm, y=1.1cm]
+        \nodosSunco
+        \ar{so}{n1}{2}
+        \ar{so}{n2}{3}
+        \ar{n1}{n2}{3}
+        \ar{n1}{n3}{4}
+        \ar{n3}{si}{1}
+        \ar{n2}{si}{2}
+        \node[font=\scriptsize, below=1mm of so] {pozo};
+        \node[font=\scriptsize, below=1mm of si] {refinería};
+      \end{tikzpicture}
+
+      \small Oleoducto de Sunco Oil: cada número es lo que aguanta la tubería (millones de barriles por hora).
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Palabras clave}
+  \small
+  \begin{tabular}{p{3.2cm}p{9.8cm}}
+    \toprule
+    \textbf{Término} & \textbf{Qué significa} \\
+    \midrule
+    Nodos y arcos & Los puntos de la red y los tramos con sentido que los unen. \\
+    Capacidad & Lo máximo que puede pasar por un arco. \\
+    Fuente y sumidero & El nodo de salida y el nodo de llegada. \\
+    Conservación & En cada nodo intermedio, \textbf{lo que entra, sale}. \\
+    Red residual & Lo que \textbf{todavía cabe} (hacia adelante) y lo que \textbf{se puede devolver} (hacia atrás). \\
+    Camino de aumento & Un camino de la fuente al sumidero con espacio en cada tramo. \\
+    Cuello de botella & El tramo más angosto del camino: es lo que se puede mandar. \\
+    Corte mínimo & La línea que separa fuente y sumidero cortando la menor capacidad: el embudo más angosto. \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{El método en pasos}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \textbf{Ford-Fulkerson} (1956), con la regla de \textbf{Edmonds y Karp} (1972):
+      \begin{enumerate}\setlength{\itemsep}{0.4em}
+        \setcounter{enumi}{-1}
+        \item Empezar con todo el flujo en 0.
+        \item Buscar en la red residual el camino con \textbf{menos arcos} (por capas).
+        \item Su \textbf{cuello de botella} $\delta$ = lo menor que cabe en sus tramos.
+        \item Mandar $\delta$ por el camino y sumarlo al total.
+      \end{enumerate}
+      \medskip
+      Se termina cuando \textbf{ya no hay camino} al sumidero.
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \begin{tikzpicture}[node distance=3.5mm and 6mm, >=Stealth,
+        caja/.style={draw, rounded corners=2pt, fill=gray!8, align=center, minimum width=3.8cm, inner sep=3pt, font=\scriptsize},
+        decision/.style={draw, diamond, aspect=2.4, fill=gray!18, align=center, inner sep=0pt, font=\scriptsize},
+        fin/.style={draw, rounded corners=6pt, fill=gray!25, align=center, inner sep=4pt, font=\scriptsize}]
+        \node[caja] (ini) {Todo el flujo en 0};
+        \node[caja, below=of ini] (res) {Armar la red residual};
+        \node[decision, below=of res] (hay) {¿Hay camino?};
+        \node[fin, right=of hay] (fin) {\textbf{Flujo máximo}\\ y corte mínimo};
+        \node[caja, below=of hay] (cue) {Camino con menos arcos\\ y su cuello de botella};
+        \node[caja, below=of cue] (aum) {Mandar el cuello de botella};
+        \draw[->] (ini) -- (res);
+        \draw[->] (res) -- (hay);
+        \draw[->] (hay) -- node[above, font=\tiny] {no} (fin);
+        \draw[->] (hay) -- node[right, font=\tiny] {sí} (cue);
+        \draw[->] (cue) -- (aum);
+        \draw[->] (aum.west) -- ++(-0.4,0) |- (res.west);
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{¿Por qué a veces hay que devolver flujo?}
+  \centering
+  \begin{tikzpicture}[x=1.5cm, y=1.0cm]
+    \node[fuente] (s) at (0,0) {$s$};
+    \node[nodo] (a) at (1.5,1) {$a$};
+    \node[nodo] (b) at (1.5,-1) {$b$};
+    \node[sumidero] (t) at (3,0) {$t$};
+    \ar[camino]{s}{a}{1/1}
+    \ar[libre]{s}{b}{0/1}
+    \ar[camino]{a}{b}{1/1}
+    \ar[libre]{a}{t}{0/1}
+    \ar[camino]{b}{t}{1/1}
+    \node[font=\small, align=center] at (1.5,-1.9) {Mal camino: $s\to a\to b\to t$ (total 1)};
+  \end{tikzpicture}
+  \qquad\qquad
+  \begin{tikzpicture}[x=1.5cm, y=1.0cm]
+    \node[fuente] (s) at (0,0) {$s$};
+    \node[nodo] (a) at (1.5,1) {$a$};
+    \node[nodo] (b) at (1.5,-1) {$b$};
+    \node[sumidero] (t) at (3,0) {$t$};
+    \ar[usado]{s}{a}{1/1}
+    \ar[camino]{s}{b}{1/1}
+    \ar[libre]{a}{b}{0/1}
+    \draw[camino, dashed] (b) to[bend left=40] node[etq, left] {devuelvo 1} (a);
+    \ar[camino]{a}{t}{1/1}
+    \ar[usado]{b}{t}{1/1}
+    \node[font=\small, align=center] at (1.5,-1.9) {Corrección: $s\to b\to a\to t$ (total 2)};
+  \end{tikzpicture}
+
+  \bigskip
+  \begin{block}{Idea}
+    Recorrer un arco \textbf{al revés} = devolver lo que ya pasaba por él. Así un mal camino se corrige.
+  \end{block}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Ejercicio: Parque Seervada (Hillier y Lieberman)}
+  \begin{columns}[c]
+    \begin{column}{0.4\textwidth}
+      Tranvías desde la entrada \textbf{O} hasta el mirador \textbf{T}.
+
+      \medskip
+      Cada camino admite un máximo de \textbf{viajes por día} (el número de cada arco).
+
+      \medskip
+      \textbf{¿Cuántos viajes por día pueden llegar como máximo a T?}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \centering
+      \begin{tikzpicture}[x=1.42cm, y=1.1cm]
+        \nodosSeervada
+        \ar{O}{A}{5}
+        \ar{O}{B}{7}
+        \ar{O}{C}{4}
+        \ar{A}{B}{1}
+        \ar{A}{D}{3}
+        \ar{B}{C}{2}
+        \ar[arco, lbl/.style={pos=0.6}]{B}{D}{4}
+        \ar[arco, lbl/.style={pos=0.6}]{B}{E}{5}
+        \ar{C}{E}{4}
+        \ar{D}{T}{9}
+        \ar{E}{D}{1}
+        \ar{E}{T}{6}
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Seervada: los caminos de aumento}
+  \begin{columns}[c]
+    \begin{column}{0.53\textwidth}
+      \footnotesize
+      \setlength{\tabcolsep}{2.5pt}
+      \begin{tabular}{clcc}
+        \toprule
+        & \textbf{Camino} & \textbf{Cuello} & \textbf{Total} \\
+        \midrule
+        1 & $O\to A\to D\to T$ & $\min(5,3,9) = 3$ & 3 \\
+        2 & $O\to B\to D\to T$ & $\min(7,4,6) = 4$ & 7 \\
+        3 & $O\to B\to E\to T$ & $\min(3,5,6) = 3$ & 10 \\
+        4 & $O\to C\to E\to T$ & $\min(4,4,3) = 3$ & 13 \\
+        5 & $O\to C\to E\to D\to T$ & $\min(1,1,1,2) = 1$ & 14 \\
+        \bottomrule
+      \end{tabular}
+
+      \medskip
+      Primero todos los caminos de 3 arcos; cuando se acaban, el de 4.
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \centering
+      \begin{tikzpicture}[x=1.08cm, y=0.95cm]
+        \nodosSeervada
+        \ar[usado]{O}{A}{3/5}
+        \ar[usado]{O}{B}{7/7}
+        \ar[camino]{O}{C}{4/4}
+        \ar[libre]{A}{B}{0/1}
+        \ar[usado]{A}{D}{3/3}
+        \ar[libre]{B}{C}{0/2}
+        \ar[usado, lbl/.style={pos=0.6}]{B}{D}{4/4}
+        \ar[usado, lbl/.style={pos=0.6}]{B}{E}{3/5}
+        \ar[camino]{C}{E}{4/4}
+        \ar[camino]{D}{T}{8/9}
+        \ar[camino]{E}{D}{1/1}
+        \ar[usado]{E}{T}{6/6}
+      \end{tikzpicture}
+
+      \scriptsize Después del camino 5 (resaltado). Etiqueta: flujo/capacidad.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Seervada: resultado y corte mínimo}
+  \begin{columns}[c]
+    \begin{column}{0.4\textwidth}
+      Desde O ya solo se llega a \{O, A, B, C, E\}: no hay camino a T.
+
+      \medskip
+      Arcos del corte (todos llenos):\\
+      A$\to$D (3), B$\to$D (4), E$\to$D (1), E$\to$T (6)
+      \[ 3 + 4 + 1 + 6 = 14 \]
+
+      \centering
+      \res{\text{Flujo máximo} = 14}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \centering
+      \begin{tikzpicture}[x=1.4cm, y=1.1cm]
+        \nodosSeervada
+        \ar[usado]{O}{A}{3/5}
+        \ar[usado]{O}{B}{7/7}
+        \ar[usado]{O}{C}{4/4}
+        \ar[libre]{A}{B}{0/1}
+        \ar[usado, lbl/.style={pos=0.35}]{A}{D}{3/3}
+        \ar[libre]{B}{C}{0/2}
+        \ar[usado, lbl/.style={pos=0.4}]{B}{D}{4/4}
+        \ar[usado, lbl/.style={pos=0.6}]{B}{E}{3/5}
+        \ar[usado]{C}{E}{4/4}
+        \ar[usado]{D}{T}{8/9}
+        \ar[usado, lbl/.style={pos=0.25}]{E}{D}{1/1}
+        \ar[usado, lbl/.style={pos=0.65}]{E}{T}{6/6}
+        \draw[corte] plot[smooth] coordinates {(2.75,0.2) (2.95,-1.2) (3.4,-1.95) (4.1,-2.3) (4.55,-3.7)};
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Los otros dos ejercicios}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{Sunco Oil} {\small(Winston)}\\[2pt]
+      \begin{tikzpicture}[x=1.4cm, y=0.95cm]
+        \nodosSunco
+        \ar[usado]{so}{n1}{1/2}
+        \ar[usado]{so}{n2}{2/3}
+        \ar[libre]{n1}{n2}{0/3}
+        \ar[usado]{n1}{n3}{1/4}
+        \ar[usado]{n3}{si}{1/1}
+        \ar[usado]{n2}{si}{2/2}
+        \draw[corte] (3.6,0.45) -- (3.6,-2.45);
+      \end{tikzpicture}
+
+      \small 2 caminos: so$\to$2$\to$si (2) y so$\to$1$\to$3$\to$si (1).\\
+      Corte: las tuberías que llegan a si.\\[3pt]
+      \res{\text{Flujo máximo} = 3}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{Red de cinco nodos} {\small(Taha)}\\[2pt]
+      \begin{tikzpicture}[x=1.3cm, y=0.8cm]
+        \nodosTaha
+        \ar[usado]{t1}{t2}{20/20}
+        \ar[usado]{t1}{t3}{30/30}
+        \ar[usado]{t1}{t4}{10/10}
+        \ar[libre]{t2}{t3}{0/40}
+        \ar[usado]{t2}{t5}{20/30}
+        \ar[usado, bend left=40, lbl/.style={right}]{t3}{t4}{10/10}
+        \draw[libre, bend left=40] (t4) to (t3);
+        \ar[usado]{t3}{t5}{20/20}
+        \ar[usado]{t4}{t5}{20/20}
+        \draw[corte] (0.5,0.1) -- (0.5,-4.1);
+      \end{tikzpicture}
+
+      \small 4 caminos: 20 + 20 + 10 + 10.\\
+      Corte: las tuberías que salen de 1.\\[3pt]
+      \res{\text{Flujo máximo} = 60}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Flujo máximo = corte mínimo}
+  \begin{block}{Teorema de Ford y Fulkerson}
+    Todo lo que llega al sumidero tiene que cruzar cualquier línea que lo separe de la fuente. Por eso
+    \[ \text{flujo máximo} = \text{capacidad del corte mínimo} \quad (\text{el embudo más angosto}). \]
+  \end{block}
+  \medskip
+  \centering
+  \begin{tabular}{lccc}
+    \toprule
+    \textbf{Ejercicio} & \textbf{Caminos} & \textbf{Corte mínimo} & \textbf{Flujo máximo} \\
+    \midrule
+    Sunco Oil & 2 & $1 + 2 = 3$ & 3 \\
+    Parque Seervada & 5 & $3 + 4 + 1 + 6 = 14$ & 14 \\
+    Red de Taha & 4 & $20 + 30 + 10 = 60$ & 60 \\
+    \bottomrule
+  \end{tabular}
+
+  \medskip
+  \raggedright
+  Sirve para \textbf{comprobar} el resultado y dice \textbf{qué tramos conviene ampliar}.
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{La calculadora}
+  \centering
+  \captura[0.8\textheight]{m11}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Conclusiones}
+  \begin{itemize}\setlength{\itemsep}{0.6em}
+    \item El flujo máximo es lo más que se puede mandar sin pasarse de ninguna capacidad y con
+          ``lo que entra, sale'' en cada nodo intermedio.
+    \item Ford-Fulkerson: \textbf{buscar camino, ver su cuello de botella, mandarlo}; con Edmonds y Karp, siempre
+          el camino con menos arcos.
+    \item La red residual permite \textbf{devolver} flujo y corregir malas elecciones.
+    \item Termina cuando ya no se llega al sumidero; el corte mínimo comprueba el resultado.
+    \item También es un modelo de programación lineal: la calculadora lo verifica con el Simplex Revisado y con
+          javascript-lp-solver.
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------
+\begin{frame}{Referencias}
+  \small
+  \begin{itemize}\setlength{\itemsep}{0.5em}
+    \item Ford, L. R. y Fulkerson, D. R. (1956). Maximal flow through a network. \textit{Canadian Journal of Mathematics}, 8.
+    \item Edmonds, J. y Karp, R. M. (1972). Theoretical improvements in algorithmic efficiency for network flow problems. \textit{Journal of the ACM}, 19(2).
+    \item Hillier, F. S. y Lieberman, G. J. \textit{Introducción a la Investigación de Operaciones}. McGraw-Hill. Capítulo de optimización de redes.
+    \item Taha, H. A. \textit{Investigación de Operaciones}. Pearson. Capítulo de modelos de redes.
+    \item Winston, W. L. \textit{Investigación de operaciones: aplicaciones y algoritmos}. Thomson. Capítulo de modelos de redes.
+  \end{itemize}
+\end{frame}
+
+\end{document}
