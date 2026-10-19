@@ -84,6 +84,7 @@ npm install
 node run.mjs      # los 15 ejercicios: calculadora = libro = PDF = PL = librería
 node bordes.mjs   # casos borde y explicación con IA simulada
 node dump.mjs 11  # imprime el cuaderno de una memoria en texto
+node ui.mjs       # opcional: clics reales en Firefox (requiere playwright)
 ```
 
 ## Configurar la IA (opcional)
