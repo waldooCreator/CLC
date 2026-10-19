@@ -1,0 +1,7 @@
+{
+  "name": "clc-tests",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node run.mjs" },
+  "devDependencies": { "javascript-lp-solver": "1.0.3" }
+}

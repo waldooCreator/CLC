@@ -11,3 +11,6 @@ documentacion/*.fdb_latexmk
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Dependencias de las pruebas
+node_modules/
