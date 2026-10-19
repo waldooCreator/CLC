@@ -53,10 +53,9 @@
     const body = f.agents.map((a, i) => `<tr><td>${input(`data-k="agent" data-i="${i}"`, a, `Nombre del agente ${i + 1}`, 'cell name')}</td>${f.cost[i].map((v, j) => `<td>${input(`data-k="cost" data-i="${i}" data-j="${j}" inputmode="decimal" placeholder="0"`, v, `Costo de ${a} en ${f.tasks[j]}`)}</td>`).join('')}<td>${input(`data-k="cap" data-i="${i}" inputmode="numeric" placeholder="1"`, f.capacity[i], `Cuántas tareas puede hacer ${a}`, 'cell cap')}</td></tr>`).join('');
     return `${chips('assign')}
       <div class="grid grid-cols-2 gap-4">
-        <label class="field"><span>OBJETIVO</span>
+        <label class="field col-span-2"><span>OBJETIVO</span>
           <select class="px-input" data-k="sense"><option value="min" ${f.sense === 'min' ? 'selected' : ''}>MINIMIZAR COSTO</option><option value="max" ${f.sense === 'max' ? 'selected' : ''}>MAXIMIZAR BENEFICIO</option></select>
         </label>
-        <span></span>
         <label class="field"><span>AGENTES (FILAS)</span><input class="px-input" data-k="n" type="number" min="1" max="10" value="${n}"></label>
         <label class="field"><span>TAREAS (COLUMNAS)</span><input class="px-input" data-k="m" type="number" min="1" max="10" value="${m}"></label>
       </div>
