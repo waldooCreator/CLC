@@ -316,6 +316,24 @@ select.px-input { cursor: pointer; }
 }
 .dialog::backdrop { background: rgba(5, 3, 15, 0.8); }
 
+/* ---------- Selector rápido de ejercicios ---------- */
+.quick-pick { display: flex; flex-direction: column; gap: 8px; }
+.quick-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, 44px); gap: 8px; align-items: center; }
+.quick-topic { display: flex; flex-direction: column; gap: 4px; font-family: var(--pixel); font-size: 8px; color: var(--mute); }
+.quick-topic b { color: var(--coin); font-weight: normal; font-size: 9px; }
+.quick-ex {
+  font-family: var(--pixel);
+  font-size: 12px;
+  height: 40px;
+  color: var(--phos);
+  background: var(--well);
+  border: 3px solid var(--line);
+  cursor: pointer;
+}
+.quick-ex:hover { border-color: var(--phos); }
+.quick-ex:focus-visible { outline: 3px dashed var(--coin); outline-offset: 3px; }
+.quick-ex.is-active { background: var(--coin); color: var(--void); border-color: var(--coin); }
+
 /* ---------- Bóveda ---------- */
 .panel-tag--coin { background: var(--coin); }
 .vault-sub { font-family: var(--pixel); font-size: 9px; letter-spacing: 0.1em; color: var(--coin); margin-bottom: 6px; }

@@ -34,8 +34,12 @@ Enlace directo a un ejercicio de la bóveda: `index.html#m11` lo carga e
   devuelven flujo, corte mínimo, nodos ficticios cuando la oferta y la demanda no
   coinciden, y redes no dirigidas (ruta más corta).
 - **Despejes y método gráfico** opcionales en Simplex y Dualidad.
-- **Bóveda de ejercicios**: guarda y recupera ejercicios, con 15 memorias
-  precargadas agrupadas por tema (los ejercicios resueltos en los PDF).
+- **Ejercicios de los PDF**: panel arriba a la izquierda para cargar con un clic
+  "tema N, ejercicio 1, 2 o 3" (los 15 ejercicios resueltos en los PDF).
+- **Bóveda de ejercicios**: guarda y recupera ejercicios, con las mismas 15
+  memorias precargadas agrupadas por tema.
+- **Guía de entrada de datos**: `documentacion/guia-calculadora.html` muestra,
+  para cada ejercicio de los PDF, cómo se escribe en la calculadora.
 - **Explicar a detalle**: opcionalmente, una IA vía OpenRouter redacta la
   explicación de cada paso del cuaderno con lenguaje llano, en los cinco modos.
 

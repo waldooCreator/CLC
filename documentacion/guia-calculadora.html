@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guía de la calculadora</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+  :root {
+    --void: #0a0716; --panel: #140f2b; --panel2: #1b1538; --line: #2b2255; --ink: #e9e4ff; --mute: #9b8fc9;
+    --phos: #3cf0ff; --hot: #ff3ea5; --coin: #ffd23f; --win: #5cff7a; --lose: #ff4d5e; --vio: #c08bff;
+    --px: "Press Start 2P", ui-monospace, monospace;
+    --crt: VT323, ui-monospace, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; background: var(--void); color: var(--ink); font: 21px/1.3 var(--crt); }
+  a { color: var(--phos); }
+  code { font-family: var(--crt); background: #0d0920; border: 1px solid var(--line); padding: 0 5px; color: var(--coin); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px 60px; }
+  .px { font-family: var(--px); letter-spacing: .04em; }
+
+  header { padding: 34px 0 18px; border-bottom: 2px solid var(--line); margin-bottom: 26px; }
+  header p.k { font: 9px var(--px); color: var(--mute); letter-spacing: .2em; margin: 0 0 12px; }
+  header h1 { font: 26px/1.3 var(--px); margin: 0; color: var(--hot); text-shadow: 3px 3px 0 #3a0f2a; }
+  header h1 span { color: var(--phos); }
+  header .sub { color: var(--mute); margin: 12px 0 0; max-width: 820px; }
+
+  nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 30px; position: sticky; top: 0; z-index: 5; background: var(--void); padding: 10px 0; }
+  nav a { font: 9px var(--px); color: var(--phos); border: 2px solid var(--phos); padding: 8px 10px; text-decoration: none; }
+  nav a:hover { background: var(--phos); color: var(--void); }
+
+  h2.sec { font: 14px/1.5 var(--px); color: var(--coin); margin: 46px 0 6px; }
+  h2.sec .t { display: inline-block; background: var(--hot); color: var(--void); padding: 3px 7px; margin-right: 10px; }
+  .lead { color: var(--mute); margin: 0 0 18px; }
+
+  /* Bloques de introducción */
+  .intro { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .box { background: var(--panel); border: 2px solid var(--line); padding: 18px; }
+  .box h3 { font: 10px var(--px); color: var(--hot); margin: 0 0 14px; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .flow .st { border: 2px solid var(--phos); padding: 6px 10px; background: #0d0920; }
+  .flow .st b { color: var(--coin); }
+  .flow .ar { color: var(--hot); }
+  .screen { display: grid; grid-template-columns: 1fr 1.5fr; gap: 8px; font-size: 18px; }
+  .screen div { border: 2px dashed var(--line); padding: 8px; }
+  .screen .l { display: grid; gap: 8px; border: 0; padding: 0; }
+  .screen .z { color: var(--mute); }
+  .screen .z b { color: var(--ink); }
+  .screen .letter { font: 9px var(--px); background: var(--coin); color: var(--void); padding: 2px 5px; margin-right: 6px; }
+  .dict { width: 100%; border-collapse: collapse; font-size: 19px; }
+  .dict td { border-bottom: 1px solid var(--line); padding: 5px 6px; vertical-align: top; }
+  .dict td:first-child { color: var(--mute); width: 46%; }
+  .dict tr.h td { font: 8px var(--px); color: var(--phos); padding-top: 14px; border: 0; }
+
+  /* Tarjeta de cada ejercicio */
+  .card { background: var(--panel); border: 2px solid var(--line); margin: 0 0 26px; }
+  .card > .hd { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 16px; border-bottom: 2px solid var(--line); background: var(--panel2); }
+  .card .num { font: 10px var(--px); background: var(--coin); color: var(--void); padding: 5px 7px; }
+  .card h3 { font: 12px/1.5 var(--px); margin: 0; color: var(--ink); }
+  .card .src { color: var(--mute); font-size: 18px; }
+  .card .open { margin-left: auto; font: 8px var(--px); color: var(--win); border: 2px solid var(--win); padding: 6px 8px; text-decoration: none; }
+  .card .open:hover { background: var(--win); color: var(--void); }
+  .body { display: grid; grid-template-columns: minmax(0, 1fr) 46px minmax(0, 1.15fr); }
+  .col { padding: 16px; min-width: 0; }
+  .col > .lbl { font: 8px var(--px); color: var(--mute); margin: 0 0 12px; }
+  .mid { display: grid; place-items: center; color: var(--hot); font: 22px var(--px); }
+  .story { margin: 0 0 14px; }
+
+  .eq { border-left: 6px solid var(--c, var(--line)); padding: 4px 10px; margin: 5px 0; background: #0d0920; font-size: 23px; transition: background .15s; }
+  .eq .tg { display: inline-block; min-width: 58px; font: 8px var(--px); color: var(--c); }
+  .eq small { display: block; color: var(--mute); font-size: 16px; }
+  .eq.mute { --c: var(--line); color: var(--mute); }
+
+  table.pdf { border-collapse: collapse; font-size: 20px; }
+  table.pdf th, table.pdf td { border: 1px solid var(--line); padding: 3px 9px; text-align: center; }
+  table.pdf th { color: var(--mute); font-weight: normal; }
+  table.pdf td.no { color: var(--lose); }
+  table.pdf td.cap, table.pdf th.cap { color: var(--coin); }
+
+  svg.net { width: 100%; height: auto; display: block; background: #0d0920; border: 1px solid var(--line); }
+  svg.net .arc line { stroke: var(--mute); stroke-width: 2; }
+  svg.net .arc rect { fill: #0d0920; stroke: var(--line); }
+  svg.net .arc text { fill: var(--ink); font: 15px var(--crt); }
+  svg.net .arc.on line { stroke: var(--coin); stroke-width: 4; }
+  svg.net .arc.on rect { fill: var(--coin); }
+  svg.net .arc.on text { fill: var(--void); }
+  svg.net .nd circle { fill: var(--panel); stroke: var(--ink); stroke-width: 2; }
+  svg.net .nd.src circle { stroke: var(--phos); stroke-width: 3; }
+  svg.net .nd.snk circle { stroke: var(--hot); stroke-width: 3; }
+  svg.net .nd text { fill: var(--ink); font: 16px var(--crt); }
+  svg.net .sup { font: 16px var(--crt); }
+  .hint { color: var(--mute); font-size: 17px; margin: 8px 0 0; }
+
+  /* Maqueta de la calculadora */
+  .calc { background: var(--void); border: 2px solid var(--line); padding: 14px; position: relative; }
+  .tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 0 0 14px; }
+  .tab { border: 2px solid var(--line); padding: 5px 3px; font: 7px/1.5 var(--px); color: var(--mute); text-align: center; opacity: .55; }
+  .tab b { display: block; font-size: 11px; }
+  .tab.on { border-color: var(--hot); color: var(--hot); opacity: 1; box-shadow: 0 0 0 2px #3a0f2a; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 12px; }
+  .fld .k { font: 7px var(--px); color: var(--mute); margin: 0 0 5px; min-height: 22px; display: flex; align-items: center; gap: 6px; }
+  .in { border: 2px solid #3a2f70; background: #0d0920; padding: 2px 8px; font: 21px/1.3 var(--crt); letter-spacing: 0; min-height: 31px; white-space: nowrap; }
+  .in.sel::after { content: " ▾"; color: var(--mute); }
+  .in.hl { border-color: var(--coin); color: var(--coin); }
+  .mk { position: relative; }
+  .n { display: inline-grid; place-items: center; min-width: 20px; height: 20px; border-radius: 50%; background: var(--hot); color: var(--void); font: 9px var(--px); padding: 0 4px; vertical-align: middle; }
+  .mk > .n { position: absolute; top: -9px; left: -9px; z-index: 2; box-shadow: 0 0 0 2px var(--void); }
+  .scroll { overflow-x: auto; padding: 10px 0 4px 10px; margin-left: -10px; }
+  table.grid { border-collapse: separate; border-spacing: 4px; }
+  table.grid th { font: 7px var(--px); color: var(--mute); padding: 2px 4px; text-align: center; white-space: nowrap; }
+  table.grid td { padding: 0; }
+  table.grid .in { min-width: 46px; text-align: right; }
+  table.grid .in.name { text-align: left; color: var(--phos); }
+  table.grid .in.m { color: var(--lose); border-color: var(--lose); text-align: center; }
+  table.grid .in.cap { border-color: var(--coin); color: var(--coin); text-align: center; }
+  table.grid .in.ph { color: #4a3f80; }
+  table.grid .rt { font: 8px var(--px); color: var(--c, var(--mute)); padding-right: 6px; white-space: nowrap; }
+  table.grid tr[data-a] .in { border-color: var(--c); }
+  table.grid tr { transition: background .15s; }
+  table.grid tr.on td .in, .eq.on { background: #2a2050; }
+  table.grid tr.on .in { border-color: var(--coin) !important; }
+  .x { color: var(--mute); font: 9px var(--px); padding: 0 4px; }
+  .rowi { font: 7px var(--px); color: #4a3f80; text-align: right; padding-right: 4px; }
+  .btnrow { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; align-items: center; }
+  .btn { font: 9px var(--px); padding: 9px 12px; border: 2px solid var(--line); color: var(--mute); }
+  .btn.start { background: var(--win); color: var(--void); border-color: var(--win); }
+  .btn.add { color: var(--phos); border-color: var(--phos); font-size: 8px; padding: 6px 9px; }
+  .chk { margin-top: 12px; font-size: 18px; color: var(--mute); }
+  .chk .bx { display: inline-grid; place-items: center; width: 18px; height: 18px; border: 2px solid var(--phos); margin-right: 6px; vertical-align: -3px; color: var(--phos); font-size: 16px; }
+  .chk.yes { color: var(--ink); }
+  .sub2 { font: 8px var(--px); color: var(--hot); margin: 12px 0 4px; }
+
+  /* Pasos y consejos */
+  .foot { display: grid; grid-template-columns: 1.3fr 1fr; border-top: 2px solid var(--line); }
+  .steps { list-style: none; margin: 0; padding: 14px 16px; }
+  .steps li { display: grid; grid-template-columns: 28px 1fr; gap: 6px; margin: 0 0 7px; }
+  .steps li .n { margin-top: 3px; }
+  .steps li.opt { color: var(--mute); }
+  .tips { padding: 14px 16px; border-left: 2px solid var(--line); background: #110c25; }
+  .tips h4 { font: 9px var(--px); color: var(--coin); margin: 0 0 10px; }
+  .tips ul { margin: 0; padding-left: 18px; }
+  .tips li { margin: 0 0 8px; }
+  .ok { margin-top: 12px; border: 2px solid var(--win); padding: 8px 10px; color: var(--win); }
+  .ok b { font: 9px var(--px); display: block; margin-bottom: 4px; }
+
+  footer { color: var(--mute); border-top: 2px solid var(--line); margin-top: 40px; padding-top: 16px; font-size: 18px; }
+
+  @media (max-width: 900px) {
+    .intro, .foot { grid-template-columns: 1fr; }
+    .body { grid-template-columns: 1fr; }
+    .mid { transform: rotate(90deg); padding: 4px 0; }
+    .tips { border-left: 0; border-top: 2px solid var(--line); }
+    header h1 { font-size: 18px; }
+  }
+  @media print {
+    nav { display: none; }
+    .card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="k">SIMPLEX ARCADE · GUÍA DE ENTRADA DE DATOS</p>
+    <h1>DEL PDF A LA <span>CALCULADORA</span></h1>
+    <p class="sub">Los 3 ejercicios de cada uno de los 5 PDF, y cómo se escriben en la calculadora. A la izquierda el ejercicio
+      como viene en el PDF; a la derecha, cómo debe quedar la pantalla. Los <span class="n">1</span> son el orden en que se llena.
+      Pasa el ratón sobre una fila o una flecha para ver con qué corresponde.</p>
+  </header>
+
+  <nav id="nav"></nav>
+
+  <section id="antes">
+    <h2 class="sec"><span class="t">0</span>ANTES DE EMPEZAR</h2>
+    <div class="intro">
+      <div class="box">
+        <h3>SIEMPRE LOS MISMOS 4 PASOS</h3>
+        <div class="flow">
+          <span class="st"><b>1</b> Elegir modo (1P…5P)</span><span class="ar">▶</span>
+          <span class="st"><b>2</b> LIMPIAR</span><span class="ar">▶</span>
+          <span class="st"><b>3</b> Llenar el MODELO</span><span class="ar">▶</span>
+          <span class="st"><b>4</b> ▶ START</span>
+        </div>
+        <p class="hint" style="margin-top:14px">Después compara con el <b style="color:var(--win)">resultado esperado</b> de cada tarjeta.
+          Si no coincide, revisa signos y filas: casi siempre es un número en la casilla equivocada.</p>
+        <h3 style="margin-top:22px">CÓMO ESTÁ ORGANIZADA LA PANTALLA</h3>
+        <div class="screen">
+          <div class="l">
+            <div class="z"><span class="letter">A</span><b>Pestañas</b> 1P · 2P · 3P · 4P · 5P</div>
+            <div class="z"><span class="letter">B</span><b>MODELO</b>: aquí escribes. Abajo, ▶ START y LIMPIAR</div>
+            <div class="z"><span class="letter">C</span><b>BÓVEDA</b>: los 15 ejercicios ya escritos, para comparar</div>
+          </div>
+          <div class="z"><span class="letter">D</span><b>Pantalla</b> (lado derecho): el resultado arriba y debajo el cuaderno paso a paso.</div>
+        </div>
+        <p class="hint">Sin escribir nada: arriba a la izquierda de la calculadora está <b>EJERCICIOS DE LOS PDF</b>. Elige
+          <b>TEMA</b> y el botón <b>1</b>, <b>2</b> o <b>3</b> y el ejercicio se carga ya escrito (la tarjeta <b>2.3</b> de esta guía es
+          tema 2, ejercicio 3). Para practicar, escríbelo tú primero y luego cárgalo para comparar casilla por casilla.</p>
+      </div>
+      <div class="box">
+        <h3>DICCIONARIO: LO QUE DICE EL PDF → LO QUE ESCRIBES</h3>
+        <table class="dict" id="dict"></table>
+      </div>
+    </div>
+  </section>
+
+  <main id="mods"></main>
+
+  <footer>
+    Guía hecha a partir de <code>vault.js</code> (las 15 memorias de la calculadora) y de los PDF de esta carpeta.
+    Los resultados esperados se comprobaron con <code>tests/run.mjs</code>: 15/15 coinciden. El modo 2P (Dualidad) usa
+    el mismo formulario que 1P; no tiene PDF propio, por eso no aparece aquí.
+  </footer>
+</div>
+
+<script>
+const SUB = ['₁', '₂', '₃', '₄', '₅'];
+const REL = { '<=': '≤', '>=': '≥', '=': '=' };
+const COL = ['var(--phos)', 'var(--coin)', 'var(--win)', 'var(--vio)'];
+const ARCS = (txt) => txt.trim().split(/\s*;\s*/).map((t) => t.split(/\s+/));
+const MODE_TABS = [['1P', 'SIMPLEX'], ['2P', 'DUALIDAD'], ['3P', 'ASIGNACIÓN'], ['4P', 'FLUJO MÁX.'], ['5P', 'COSTO MÍN.']];
+
+const DICT = [
+  ['h', 'SIMPLEX (1P)'],
+  ['ganancia, ventas, producción “lo máximo”', 'OBJETIVO → <b>MAXIMIZAR</b>'],
+  ['costo, tiempo, daño “lo mínimo”', 'OBJETIVO → <b>MINIMIZAR</b>'],
+  ['“como mucho”, “no más de”, “disponible”', '<b>≤</b>'],
+  ['“al menos”, “no menos de”', '<b>≥</b>'],
+  ['“exactamente”', '<b>=</b>'],
+  ['una variable no aparece en la restricción', '<code>0</code> o casilla vacía'],
+  ['variables a los dos lados (x₂ ≤ x₁ + 1)', 'pásalas a la izquierda: <code>-1</code> x₁ + <code>1</code> x₂ ≤ <code>1</code>'],
+  ['decimales y fracciones', '<code>0.5</code> o <code>1/2</code> (punto, no coma)'],
+  ['h', 'ASIGNACIÓN (3P)'],
+  ['la tabla de costos del enunciado', 'se copia <b>tal cual</b>, fila por fila'],
+  ['“no puede”, “no cabe”, — en la tabla', '<code>M</code> en esa casilla'],
+  ['más tareas que agentes (o al revés)', 'no hagas nada: la calculadora agrega lo ficticio'],
+  ['“puede encargarse de 2”', 'columna CAP. = <code>2</code>'],
+  ['h', 'REDES (4P y 5P)'],
+  ['cada flecha del dibujo', 'una fila: DESDE, HACIA, CAPACIDAD'],
+  ['“sin límite”', 'CAPACIDAD vacía (∞)'],
+  ['oferta / producción de un nodo', 'número <b>positivo</b>: <code>35</code>'],
+  ['demanda / lo que pide un nodo', 'número <b>negativo</b>: <code>-45</code>'],
+  ['nodo de paso (ni ofrece ni pide)', 'no hace falta escribirlo'],
+  ['“se recorre en los dos sentidos”', 'marcar <b>CADA ARCO SIRVE EN LOS DOS SENTIDOS</b>'],
+  ['ruta más corta de O a T', 'O = <code>1</code>, T = <code>-1</code>, distancia en COSTO'],
+];
+
+const MODS = [
+  {
+    id: 'm-simplex', tab: 0, t: '1', title: 'SIMPLEX REVISADO', pdf: 'ejercicios-simplex-revisado.pdf', kind: 'lp',
+    lead: 'Programación lineal: una fila para el objetivo (Z) y una fila por restricción. Cada color de la izquierda es una fila de la derecha.',
+    ex: [
+      {
+        m: 1, name: 'Wyndor Glass Co.', src: 'Hillier y Lieberman · págs. 2–6',
+        story: 'Una fábrica hace <b>puertas</b> (x₁) y <b>ventanas</b> (x₂). Pasan por 3 plantas con horas limitadas. Cada lote deja 3 y 5 (miles de dólares). ¿Cuántos lotes de cada uno para ganar lo máximo?',
+        why: 'se busca la mayor ganancia',
+        labels: ['Planta 1: hay 4 h', 'Planta 2: hay 12 h', 'Planta 3: hay 18 h'],
+        form: { sense: 'max', c: ['3', '5'], rows: [[['1', '0'], '<=', '4'], [['0', '2'], '<=', '12'], [['3', '2'], '<=', '18']] },
+        tips: [
+          'Por la planta 1 solo pasan puertas: <b>x₁ ≤ 4</b> se escribe <code>1</code> en x₁ y <code>0</code> en x₂ (o la dejas vacía).',
+          'Igual en la planta 2: <b>2x₂ ≤ 12</b> → <code>0</code>, <code>2</code>, <code>12</code>.',
+          'Los “miles de dólares” no se escriben: solo <code>3</code> y <code>5</code>.',
+        ],
+        expect: 'Z* = 36 · x₁ = 2, x₂ = 6',
+      },
+      {
+        m: 2, name: 'Reddy Mikks', src: 'Taha · págs. 7–10',
+        story: 'Pintura de <b>exteriores</b> (x₁) e <b>interiores</b> (x₂) con dos materias primas y dos condiciones del mercado. Ganancia: 5 y 4 (miles por tonelada).',
+        why: 'se busca la mayor ganancia',
+        labels: ['Materia prima M1: 24 ton', 'Materia prima M2: 6 ton', 'Interiores no supera a exteriores en más de 1', 'Demanda de interiores: máximo 2'],
+        form: { sense: 'max', c: ['5', '4'], rows: [[['6', '4'], '<=', '24'], [['1', '2'], '<=', '6'], [['-1', '1'], '<=', '1'], [['0', '1'], '<=', '2']] },
+        tips: [
+          'R3 es la trampa: “interiores no supera a exteriores en más de 1” es x₂ ≤ x₁ + 1. La calculadora quiere las variables a la izquierda, así que x₁ pasa restando: <b>−x₁ + x₂ ≤ 1</b> → <code>-1</code>, <code>1</code>, <code>1</code>.',
+          'Son <b>4</b> restricciones: cambia RESTRICCIONES a 4 antes de escribir, para que aparezca la fila R4.',
+        ],
+        expect: 'Z* = 21 · x₁ = 3, x₂ = 3/2',
+      },
+      {
+        m: 3, name: 'Terapia de radiación', src: 'Hillier y Lieberman · págs. 11–16',
+        story: 'Dos haces de radiación (x₁, x₂ en kilorads). El tejido sano absorbe 0.4x₁ + 0.5x₂ y se quiere que sea <b>lo mínimo</b>, cumpliendo tres condiciones.',
+        why: 'se busca el menor daño al tejido sano',
+        labels: ['Tejidos críticos: como mucho 2.7', 'Región del tumor: exactamente 6', 'Centro del tumor: al menos 6'],
+        form: { sense: 'min', c: ['0.4', '0.5'], rows: [[['0.3', '0.1'], '<=', '2.7'], [['0.5', '0.5'], '=', '6'], [['0.6', '0.4'], '>=', '6']] },
+        tips: [
+          'Cada restricción lleva un signo distinto: “como mucho” → <b>≤</b>, “exactamente” → <b>=</b>, “al menos” → <b>≥</b>. Cámbialo en la lista de la columna del medio.',
+          'El tejido sano <b>no</b> es una restricción: es la fila <b>Z</b>.',
+          'Decimales con punto: <code>0.4</code>. También vale <code>2/5</code>.',
+          'MÉTODO: GRAN M, como en el PDF (con DOS FASES sale el mismo resultado).',
+        ],
+        expect: 'Z* = 21/4 = 5.25 · x₁ = 15/2, x₂ = 9/2',
+      },
+    ],
+  },
+  {
+    id: 'm-asig', tab: 2, t: '2', title: 'ASIGNACIÓN · KUHN-MUNKRES', pdf: '02-asignacion-kuhn-munkres.pdf', kind: 'assign',
+    lead: 'Cada agente hace una tarea. La tabla del PDF se copia tal cual en la calculadora: filas = agentes, columnas = tareas.',
+    ex: [
+      {
+        m: 4, name: 'Los hijos de Joe Klyne', src: 'Taha · ejercicio 1',
+        story: 'Tres hijos dicen cuánto cobrarían por cada tarea de la casa. ¿Quién hace qué para que Joe pague lo menos posible?',
+        why: 'Joe quiere pagar lo menos',
+        form: { sense: 'min', agents: ['John', 'Karen', 'Terri'], tasks: ['Podar', 'Pintar', 'Lavar'], cost: [['15', '10', '9'], ['9', '15', '10'], ['10', '12', '8']], capacity: ['', '', ''] },
+        tips: [
+          'Los nombres son opcionales: con A1, A2… y T1, T2… sale el mismo resultado, pero con nombres la respuesta se lee mejor.',
+          'El símbolo $ no se escribe: solo el número.',
+          'CAP. se deja vacío: cada hijo hace una sola tarea.',
+        ],
+        expect: 'Z* = 27',
+      },
+      {
+        m: 5, name: 'Fowle Marketing Research', src: 'Anderson, Sweeney y Williams · ejercicio 2',
+        story: 'Tres líderes de proyecto y tres clientes nuevos. La tabla dice cuántos días tardaría cada líder con cada cliente.',
+        why: 'se busca el menor total de días',
+        form: { sense: 'min', agents: ['Terry', 'Carle', 'McClymonds'], tasks: ['Cliente 1', 'Cliente 2', 'Cliente 3'], cost: [['10', '15', '9'], ['9', '18', '5'], ['6', '14', '3']], capacity: ['', '', ''] },
+        tips: [
+          'Aquí el “costo” son días. La unidad da igual: la calculadora solo ve números.',
+          'Es el ejercicio con el que el PDF explica el ajuste de la tabla: en el cuaderno de la calculadora verás las líneas que tapan los ceros.',
+        ],
+        expect: 'Z* = 26',
+      },
+      {
+        m: 6, name: 'Machineco', src: 'Winston · ejercicio 3',
+        story: 'Cuatro máquinas y cuatro trabajos. Cada máquina se prepara antes de empezar; la tabla da las horas de preparación.',
+        why: 'se busca el menor tiempo total',
+        form: { sense: 'min', agents: ['Máq. 1', 'Máq. 2', 'Máq. 3', 'Máq. 4'], tasks: ['Trab. 1', 'Trab. 2', 'Trab. 3', 'Trab. 4'], cost: [['14', '5', '8', '7'], ['2', '12', '6', '5'], ['7', '8', '3', '9'], ['2', '4', '6', '10']], capacity: ['', '', '', ''] },
+        tips: [
+          'Primero cambia AGENTES a <b>4</b> y TAREAS a <b>4</b>: la tabla crece y aparecen las casillas que faltan.',
+          'Copia fila por fila: la fila de la Máquina 1 es <code>14</code> <code>5</code> <code>8</code> <code>7</code>.',
+        ],
+        expect: 'Z* = 15',
+      },
+    ],
+  },
+  {
+    id: 'm-casos', tab: 2, t: '3', title: 'CASOS PARTICULARES DE ASIGNACIÓN', pdf: '03-casos-particulares-asignacion.pdf', kind: 'assign',
+    lead: 'Mismo modo 3P. Lo especial (tabla no cuadrada, maximizar, prohibidas, varias tareas por agente) se resuelve con una casilla, no a mano.',
+    ex: [
+      {
+        m: 7, name: 'Job Shop Co.', src: 'Hillier y Lieberman · ejercicio 1 · no balanceado + prohibida',
+        story: 'Tres máquinas nuevas y cuatro ubicaciones posibles. Costo de mover materiales en $/hora. La <b>máquina 2 no cabe en la ubicación 2</b>.',
+        why: 'se busca el menor costo',
+        form: { sense: 'min', agents: ['Máquina 1', 'Máquina 2', 'Máquina 3'], tasks: ['Lugar 1', 'Lugar 2', 'Lugar 3', 'Lugar 4'], cost: [['13', '16', '12', '11'], ['15', 'M', '13', '20'], ['5', '7', '10', '6']], capacity: ['', '', ''] },
+        tips: [
+          'Hay 3 agentes y 4 tareas: AGENTES <b>3</b>, TAREAS <b>4</b>. <b>No agregues la fila ficticia</b>: la calculadora la crea sola.',
+          'La casilla prohibida (— en el PDF) se escribe <code>M</code>. También vale <code>-</code>.',
+        ],
+        expect: 'Z* = 29 (un lugar queda libre)',
+      },
+      {
+        m: 8, name: 'Vendedores y zonas', src: 'Ejercicio adaptado · ejercicio 2 · maximizar',
+        story: 'Cuatro vendedores y cuatro zonas. La tabla da las ventas esperadas (miles de $ al mes). Se quieren las ventas <b>más altas</b>.',
+        why: 'son ventas: se quiere lo máximo',
+        form: { sense: 'max', agents: ['Ana', 'Beto', 'Carla', 'Diego'], tasks: ['Norte', 'Sur', 'Este', 'Oeste'], cost: [['44', '80', '52', '60'], ['60', '56', '40', '72'], ['36', '60', '48', '48'], ['52', '76', '36', '40']], capacity: ['', '', '', ''] },
+        tips: [
+          'Lo único que cambia es OBJETIVO → <b>MAXIMIZAR BENEFICIO</b>.',
+          'No hagas la “pérdida de oportunidad” (80 − valor) a mano: escribe las ventas tal cual y la calculadora la hace en el cuaderno.',
+        ],
+        expect: 'Z* = 252',
+      },
+      {
+        m: 9, name: 'Better Products Co.', src: 'Hillier y Lieberman · ejercicio 3 · capacidad + prohibida',
+        story: 'Tres plantas y cuatro productos nuevos. Las plantas 1 y 2 pueden hacer <b>dos</b> productos; la 3, uno. La <b>planta 2 no puede</b> hacer el producto 3.',
+        why: 'se busca el menor costo diario',
+        form: { sense: 'min', agents: ['Planta 1', 'Planta 2', 'Planta 3'], tasks: ['Prod. 1', 'Prod. 2', 'Prod. 3', 'Prod. 4'], cost: [['820', '810', '840', '960'], ['800', '870', 'M', '920'], ['740', '900', '810', '840']], capacity: ['2', '2', '1'] },
+        tips: [
+          'AGENTES <b>3</b>, TAREAS <b>4</b>.',
+          'Columna <b>CAP.</b> (amarilla): <code>2</code>, <code>2</code>, <code>1</code> = cuántos productos puede hacer cada planta.',
+          'Planta 2 con producto 3: <code>M</code>.',
+        ],
+        expect: 'Z* = 3290',
+      },
+    ],
+  },
+  {
+    id: 'm-flujo', tab: 3, t: '4', title: 'FLUJO MÁXIMO', pdf: '04-flujo-maximo.pdf', kind: 'maxflow',
+    lead: 'Cada flecha del dibujo es una fila de la tabla: de dónde sale, a dónde llega y cuánto le cabe. Pasa el ratón por una fila para ver su flecha.',
+    ex: [
+      {
+        m: 10, name: 'Sunco Oil', src: 'Winston · ejercicio 1',
+        story: 'Petróleo del pozo <b>so</b> a la refinería <b>si</b>, pasando por las estaciones 1, 2 y 3. El número de cada tubería es su máximo (millones de barriles/h).',
+        layout: { so: [0, 1], 1: [1.4, 0], 2: [1.4, 2], 3: [2.8, 0], si: [4.2, 1] },
+        form: { source: 'so', sink: 'si', arcs: ARCS('so 1 2; so 2 3; 1 2 3; 1 3 4; 3 si 1; 2 si 2') },
+        tips: [
+          'El formulario trae 3 filas: pulsa <b>+ ARCO</b> hasta tener 6 (✕ borra una fila).',
+          'Primero los arcos y <b>después</b> FUENTE y SUMIDERO: esas listas se llenan con los nombres que escribiste.',
+          'Escribe los nombres siempre igual: <code>so</code> en todas las filas, no <code>SO</code> en una y <code>so</code> en otra.',
+        ],
+        expect: 'Flujo máximo = 3',
+      },
+      {
+        m: 11, name: 'Parque Seervada', src: 'Hillier y Lieberman · ejercicio 2',
+        story: 'Tranvías de la entrada <b>O</b> al mirador <b>T</b>, por las estaciones A–E. El número de cada camino es el máximo de viajes por día.',
+        layout: { O: [0, 2], A: [1.5, 0.6], B: [2, 2], C: [1.5, 3.4], D: [3.6, 0.9], E: [3.6, 3.1], T: [5, 2] },
+        form: { source: 'O', sink: 'T', arcs: ARCS('O A 5; O B 7; O C 4; A B 1; A D 3; B C 2; B D 4; B E 5; C E 4; D T 9; E D 1; E T 6') },
+        tips: [
+          '12 caminos = 12 filas.',
+          'Fíjate en la punta de la flecha: el camino entre D y E va de <b>E a D</b> → DESDE <code>E</code>, HACIA <code>D</code>.',
+        ],
+        expect: 'Flujo máximo = 14',
+      },
+      {
+        m: 12, name: 'Red de Taha', src: 'Taha · ejercicio 3',
+        story: 'Tuberías del nodo <b>1</b> al nodo <b>5</b>. Entre 3 y 4 hay tubería en los dos sentidos, con distinta capacidad.',
+        layout: { 1: [0, 2], 2: [1.8, 0.4], 3: [1.8, 2], 4: [1.8, 3.6], 5: [3.6, 2] },
+        form: { source: '1', sink: '5', arcs: ARCS('1 2 20; 1 3 30; 1 4 10; 2 3 40; 2 5 30; 3 4 10; 3 5 20; 4 3 5; 4 5 20') },
+        tips: [
+          'Entre 3 y 4 hay <b>dos</b> tuberías: son dos filas distintas, <code>3 → 4</code> con 10 y <code>4 → 3</code> con 5.',
+          'Los nodos pueden llamarse con números: FUENTE <code>1</code>, SUMIDERO <code>5</code>.',
+        ],
+        expect: 'Flujo máximo = 60',
+      },
+    ],
+  },
+  {
+    id: 'm-costo', tab: 4, t: '5', title: 'FLUJO A COSTO MÍNIMO', pdf: '05-flujo-costo-minimo.pdf', kind: 'mincost',
+    lead: 'Dos tablas: los nodos que ofrecen (+) o piden (−), y los arcos con su capacidad y su costo por unidad.',
+    ex: [
+      {
+        m: 13, name: 'Powerco', src: 'Winston · ejercicio 1 · transporte',
+        story: 'Tres plantas eléctricas (ofrecen 35, 50 y 40) abastecen cuatro ciudades (piden 45, 20, 30 y 30). Costo por millón de kWh en cada flecha. Ninguna línea tiene límite.',
+        labelT: 0.24,
+        layout: { P1: [0, 0.3], P2: [0, 2], P3: [0, 3.7], C1: [4.6, 0], C2: [4.6, 1.33], C3: [4.6, 2.67], C4: [4.6, 4] },
+        form: {
+          undirected: false,
+          nodes: [['P1', '35'], ['P2', '50'], ['P3', '40'], ['C1', '-45'], ['C2', '-20'], ['C3', '-30'], ['C4', '-30']],
+          arcs: ARCS('P1 C1 - 8; P1 C2 - 6; P1 C3 - 10; P1 C4 - 9; P2 C1 - 9; P2 C2 - 12; P2 C3 - 13; P2 C4 - 7; P3 C1 - 14; P3 C2 - 9; P3 C3 - 16; P3 C4 - 5'),
+        },
+        tips: [
+          'Oferta en positivo (<code>35</code>); demanda en <b>negativo</b> (<code>-45</code>).',
+          'CAPACIDAD vacía en todas: ninguna línea tiene límite.',
+          '12 arcos: uno por cada casilla de la tabla de costos (planta → ciudad).',
+        ],
+        expect: 'Costo mínimo = 1020',
+      },
+      {
+        m: 14, name: 'Distribution Unlimited Co.', src: 'Hillier y Lieberman · ejercicio 2 · transbordo',
+        story: 'Dos fábricas (50 y 40 unidades) y dos almacenes (piden 30 y 60). Se puede pasar por un centro de distribución CD. Solo F1→F2 (máx. 10) y CD→A2 (máx. 80) tienen límite.',
+        layout: { F1: [0, 0.4], F2: [0, 3.2], CD: [2, 1.8], A1: [4, 0.4], A2: [4, 3.2] },
+        form: {
+          undirected: false,
+          nodes: [['F1', '50'], ['F2', '40'], ['CD', '0'], ['A1', '-30'], ['A2', '-60']],
+          arcs: ARCS('F1 F2 10 200; F1 CD - 400; F1 A1 - 900; F2 CD - 300; CD A2 80 100; A1 A2 - 300; A2 A1 - 200'),
+        },
+        tips: [
+          'CD ni ofrece ni pide: ponlo con <code>0</code> o no lo escribas en NODOS (los nodos de paso no hace falta).',
+          'Solo dos arcos llevan CAPACIDAD: F1 → F2 = <code>10</code> y CD → A2 = <code>80</code>. Los demás, vacía.',
+          'A1 → A2 y A2 → A1 son dos filas distintas, cada una con su costo.',
+        ],
+        expect: 'Costo mínimo = 49000',
+      },
+      {
+        m: 15, name: 'Ruta más corta en Seervada', src: 'Hillier y Lieberman · ejercicio 3',
+        story: 'Caminos de tierra entre la entrada <b>O</b> y el mirador <b>T</b>, en millas. Cada camino se recorre en los <b>dos sentidos</b>. ¿Cuál es la ruta más corta?',
+        layout: { O: [0, 2], A: [1.5, 0.6], B: [2, 2], C: [1.5, 3.4], D: [3.6, 0.9], E: [3.6, 3.1], T: [5, 2] },
+        form: {
+          undirected: true,
+          nodes: [['O', '1'], ['T', '-1']],
+          arcs: ARCS('O A - 2; O B - 5; O C - 4; A B - 2; A D - 7; B C - 1; B D - 4; B E - 3; C E - 4; D E - 1; D T - 5; E T - 7'),
+        },
+        tips: [
+          'Ruta más corta = mandar <b>1 viajero</b>: O con <code>1</code> y T con <code>-1</code>. Las estaciones de paso no se escriben.',
+          'La distancia va en <b>COSTO</b>; CAPACIDAD vacía.',
+          'Marca <b>CADA ARCO SIRVE EN LOS DOS SENTIDOS</b>: así escribes 12 caminos y no 24.',
+        ],
+        expect: 'Distancia mínima = 13 millas',
+      },
+    ],
+  },
+];
+
+// ---------- piezas comunes ----------
+const n = (k) => `<b class="n">${k}</b>`;
+const ni = (k, txt) => `${n(k)} ${txt}`;
+const mk = (k, html) => `<div class="mk">${k ? n(k) : ''}${html}</div>`;
+const inp = (v, cls = '') => `<div class="in ${cls}">${v === '' ? '&nbsp;' : v}</div>`;
+const fld = (k, label, html) => `<div class="fld"><div class="k">${k ? ni(k, label) : label}</div>${html}</div>`;
+const tabs = (on) => mk(1, `<div class="tabs">${MODE_TABS.map(([a, b], i) => `<div class="tab ${i === on ? 'on' : ''}"><b>${a}</b>${b}</div>`).join('')}</div>`);
+const steps = (list) => `<ol class="steps">${list.map(([k, t, opt]) => `<li class="${opt ? 'opt' : ''}">${n(k)}<span>${t}</span></li>`).join('')}</ol>`;
+const minus = (s) => String(s).replace(/^-/, '−');
+
+function term(cs) {
+  let out = '';
+  cs.forEach((v, j) => {
+    const x = Number(v);
+    if (!x) return;
+    const a = String(Math.abs(x));
+    const coef = a === '1' ? '' : a;
+    out += out ? ` ${x < 0 ? '−' : '+'} ${coef}x${SUB[j]}` : `${x < 0 ? '−' : ''}${coef}x${SUB[j]}`;
+  });
+  return out || '0';
+}
+
+// ---------- 1P: programación lineal ----------
+function lpPdf(e) {
+  const f = e.form;
+  const nv = f.c.length;
+  return `<p class="story">${e.story}</p>
+    <div class="eq" style="--c:var(--hot)" data-a="z"><span class="tg">Z</span>${f.sense === 'max' ? 'Max' : 'Min'} Z = ${term(f.c)}</div>
+    ${f.rows.map(([a, r, b], i) => `<div class="eq" style="--c:${COL[i]}" data-a="${i}"><span class="tg">R${i + 1}</span>${term(a)} ${REL[r]} ${b}<small>${e.labels[i]}</small></div>`).join('')}
+    <div class="eq mute"><span class="tg">SIGNO</span>${Array.from({ length: nv }, (_, j) => `x${SUB[j]}`).join(', ')} ≥ 0</div>`;
+}
+
+function lpCalc(e) {
+  const f = e.form;
+  const nv = f.c.length;
+  const m = f.rows.length;
+  const head = `<tr><th></th>${Array.from({ length: nv }, (_, j) => `<th>x${j + 1}</th>`).join('')}<th></th><th>LADO DER.</th></tr>`;
+  const z = `<tr style="--c:var(--hot)" data-a="z"><td class="rt">${ni(4, 'Z =')}</td>${f.c.map((v) => `<td>${inp(v)}</td>`).join('')}<td></td><td></td></tr>`;
+  const rows = f.rows.map(([a, r, b], i) => `<tr style="--c:${COL[i]}" data-a="${i}"><td class="rt">${i === 0 ? ni(5, 'R1') : `R${i + 1}`}</td>${a.map((v) => `<td>${inp(v)}</td>`).join('')}<td>${i === 0 ? mk(6, inp(REL[r], 'sel')) : inp(REL[r], `sel ${r !== '<=' ? 'hl' : ''}`)}</td><td>${inp(b)}</td></tr>`).join('');
+  const sign = `<tr><td class="rt">${ni(7, 'SIGNO')}</td>${f.c.map(() => `<td>${inp('≥ 0', 'sel')}</td>`).join('')}<td></td><td></td></tr>`;
+  return `<div class="calc">${tabs(0)}
+    <div class="g2">
+      ${fld(2, 'OBJETIVO', inp(f.sense === 'max' ? 'MAXIMIZAR' : 'MINIMIZAR', 'sel hl'))}
+      ${fld(0, 'MÉTODO (ARTIFICIALES)', inp('GRAN M', 'sel'))}
+      ${fld(3, 'VARIABLES', inp(nv, 'hl'))}
+      ${fld(0, 'RESTRICCIONES', inp(m, 'hl'))}
+    </div>
+    <div class="scroll"><table class="grid">${head}${z}${rows}${sign}</table></div>
+    <div class="chk yes"><span class="bx">✓</span>INCLUIR DESPEJES Y GRÁFICA <span style="color:var(--mute)">(opcional)</span></div>
+    <div class="btnrow">${mk(8, '<span class="btn start">▶ START</span>')}<span class="btn">LIMPIAR</span></div>
+  </div>`;
+}
+
+function lpSteps(e) {
+  const f = e.form;
+  const rels = [...new Set(f.rows.map((r) => REL[r[1]]))].join(' ');
+  return [
+    [1, 'Pestaña <b>1P SIMPLEX REVISADO</b>. Si hay datos de antes, pulsa <b>LIMPIAR</b>.'],
+    [2, `OBJETIVO: <b>${f.sense === 'max' ? 'MAXIMIZAR' : 'MINIMIZAR'}</b> (${e.why}).`],
+    [3, `VARIABLES <b>${f.c.length}</b> y RESTRICCIONES <b>${f.rows.length}</b>. La tabla cambia de tamaño sola.`],
+    [4, `Fila <b>Z =</b>: ${f.c.map((v) => `<code>${v}</code>`).join(' y ')} (lo que acompaña a x₁ y x₂ en el objetivo).`],
+    [5, `Filas <b>R1…R${f.rows.length}</b>: cada restricción en su fila (mismo color que a la izquierda): número de x₁, número de x₂ y lado derecho.`],
+    [6, `Columna del medio: el signo de cada restricción (${rels}).`],
+    [7, 'Fila <b>SIGNO</b>: deja <b>≥ 0</b> en todas (no hay cantidades negativas).'],
+    [8, '<b>▶ START</b> y compara con el resultado esperado.'],
+  ];
+}
+
+// ---------- 3P: asignación ----------
+function assignPdf(e) {
+  const f = e.form;
+  const hasCap = f.capacity.some((c) => c);
+  return `<p class="story">${e.story}</p>
+    <div class="scroll"><table class="pdf">
+      <tr><th></th>${f.tasks.map((t) => `<th>${t}</th>`).join('')}${hasCap ? '<th class="cap">Capacidad</th>' : ''}</tr>
+      ${f.agents.map((a, i) => `<tr data-a="${i}"><th>${a}</th>${f.cost[i].map((v) => (v === 'M' ? '<td class="no">—</td>' : `<td>${v}</td>`)).join('')}${hasCap ? `<td class="cap">${f.capacity[i]}</td>` : ''}</tr>`).join('')}
+    </table></div>
+    <p class="hint">${f.agents.length} agentes × ${f.tasks.length} tareas${f.agents.length !== f.tasks.length ? ' → <b style="color:var(--coin)">no es cuadrada</b>, la calculadora la completa' : ''}.</p>`;
+}
+
+function assignCalc(e) {
+  const f = e.form;
+  const hasCap = f.capacity.some((c) => c);
+  const head = `<tr><th></th>${f.tasks.map((t, j) => `<th>${j === 0 ? mk(4, inp(t, 'name')) : inp(t, 'name')}</th>`).join('')}<th>${hasCap ? ni(6, 'CAP.') : 'CAP.'}</th></tr>`;
+  const body = f.agents.map((a, i) => `<tr data-a="${i}" style="--c:#3a2f70"><td>${inp(a, 'name')}</td>${f.cost[i].map((v, j) => `<td>${i === 0 && j === 0 ? mk(5, inp(v)) : inp(v, v === 'M' ? 'm' : '')}</td>`).join('')}<td>${f.capacity[i] ? inp(f.capacity[i], 'cap') : inp('1', 'ph')}</td></tr>`).join('');
+  return `<div class="calc">${tabs(2)}
+    <div class="g2">
+      <div style="grid-column:1/-1">${fld(2, 'OBJETIVO', inp(f.sense === 'max' ? 'MAXIMIZAR BENEFICIO' : 'MINIMIZAR COSTO', 'sel hl'))}</div>
+      ${fld(3, 'AGENTES (FILAS)', inp(f.agents.length, 'hl'))}
+      ${fld(0, 'TAREAS (COLUMNAS)', inp(f.tasks.length, 'hl'))}
+    </div>
+    <div class="scroll"><table class="grid">${head}${body}</table></div>
+    <div class="btnrow">${mk(hasCap ? 7 : 6, '<span class="btn start">▶ START</span>')}<span class="btn">LIMPIAR</span></div>
+  </div>`;
+}
+
+function assignSteps(e) {
+  const f = e.form;
+  const hasM = f.cost.some((r) => r.includes('M'));
+  const hasCap = f.capacity.some((c) => c);
+  const out = [
+    [1, 'Pestaña <b>3P ASIGNACIÓN</b>. Pulsa <b>LIMPIAR</b>.'],
+    [2, `OBJETIVO: <b>${f.sense === 'max' ? 'MAXIMIZAR BENEFICIO' : 'MINIMIZAR COSTO'}</b> (${e.why}).`],
+    [3, `AGENTES <b>${f.agents.length}</b> (filas) y TAREAS <b>${f.tasks.length}</b> (columnas).`],
+    [4, 'Nombres de filas y columnas (opcional).', true],
+    [5, `Los números de la tabla, fila por fila, en el mismo orden que el PDF.${hasM ? ' Donde el PDF dice — escribe <code>M</code>.' : ''}`],
+  ];
+  if (hasCap) out.push([6, `Columna <b>CAP.</b>: ${f.capacity.map((c) => `<code>${c}</code>`).join(' ')} (cuántas tareas puede hacer cada uno).`]);
+  out.push([hasCap ? 7 : 6, `<b>▶ START</b>.${hasCap ? '' : ' (CAP. vacío = cada agente hace 1 tarea.)'}`]);
+  return out;
+}
+
+// ---------- 4P y 5P: redes ----------
+function netSvg(e, kind) {
+  const f = e.form;
+  const L = e.layout;
+  const S = 78; const PX = 52; const PY = 30; const R = 16;
+  const xs = Object.values(L).map((p) => p[0]);
+  const ys = Object.values(L).map((p) => p[1]);
+  const minx = Math.min(...xs); const miny = Math.min(...ys);
+  const W = (Math.max(...xs) - minx) * S + PX * 2;
+  const H = (Math.max(...ys) - miny) * S + PY * 2;
+  const P = (k) => [(L[k][0] - minx) * S + PX, (L[k][1] - miny) * S + PY];
+  const keys = new Set(f.arcs.map((a) => `${a[0]}>${a[1]}`));
+  const supply = {};
+  (f.nodes || []).forEach(([k, v]) => { supply[k] = Number(v); });
+  const directed = !(kind === 'mincost' && f.undirected);
+  const t = e.labelT || 0.5;
+  const arcs = f.arcs.map((a, i) => {
+    const [x1, y1] = P(a[0]); const [x2, y2] = P(a[1]);
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    const ux = (x2 - x1) / len; const uy = (y2 - y1) / len;
+    const pair = keys.has(`${a[1]}>${a[0]}`);
+    const off = pair ? 7 : 0;
+    const nx = -uy * off; const ny = ux * off;
+    const end = directed ? R + 4 : R;
+    const sx = x1 + ux * R + nx; const sy = y1 + uy * R + ny;
+    const ex = x2 - ux * end + nx; const ey = y2 - uy * end + ny;
+    const cap = a[2] && a[2] !== '-' ? a[2] : '';
+    const txt = kind === 'maxflow' ? cap : (cap ? `${a[3]} (≤${cap})` : a[3]);
+    const lx = x1 + (x2 - x1) * t + nx * (pair ? 2.4 : 0);
+    const ly = y1 + (y2 - y1) * t + ny * (pair ? 2.4 : 0);
+    const w = txt.length * 7.6 + 8;
+    return `<g class="arc" data-a="${i}"><line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" ${directed ? `marker-end="url(#ah-${e.m})"` : ''}/>
+      <rect x="${lx - w / 2}" y="${ly - 9}" width="${w}" height="18" rx="2"/><text x="${lx}" y="${ly + 5}" text-anchor="middle">${txt}</text></g>`;
+  }).join('');
+  const maxx = Math.max(...xs);
+  const nodes = Object.keys(L).map((k) => {
+    const [x, y] = P(k);
+    const cls = kind === 'maxflow' ? (k === f.source ? 'src' : k === f.sink ? 'snk' : '') : (supply[k] > 0 ? 'src' : supply[k] < 0 ? 'snk' : '');
+    let sup = '';
+    if (kind === 'mincost' && supply[k] !== undefined) {
+      const v = supply[k];
+      const txt = v > 0 ? `+${v}` : v < 0 ? `−${-v}` : '0';
+      const col = v > 0 ? 'var(--phos)' : v < 0 ? 'var(--hot)' : 'var(--mute)';
+      const left = L[k][0] === minx; const right = L[k][0] === maxx;
+      const [tx, ty, anc] = left ? [x - R - 5, y + 5, 'end'] : right ? [x + R + 5, y + 5, 'start'] : [x, y + R + 15, 'middle'];
+      sup = `<text class="sup" x="${tx}" y="${ty}" text-anchor="${anc}" fill="${col}">${txt}</text>`;
+    }
+    return `<g class="nd ${cls}"><circle cx="${x}" cy="${y}" r="${R}"/><text x="${x}" y="${y + 5}" text-anchor="middle">${k}</text></g>${sup}`;
+  }).join('');
+  return `<svg class="net" viewBox="0 0 ${W} ${H}" role="img" aria-label="Red del ejercicio ${e.name}">
+    <defs><marker id="ah-${e.m}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="context-stroke"/></marker></defs>
+    ${arcs}${nodes}</svg>`;
+}
+
+function netPdf(e, kind) {
+  const legend = kind === 'maxflow'
+    ? '<span style="color:var(--phos)">●</span> fuente &nbsp; <span style="color:var(--hot)">●</span> sumidero &nbsp; número = capacidad'
+    : `<span style="color:var(--phos)">●</span> ofrece (+) &nbsp; <span style="color:var(--hot)">●</span> pide (−) &nbsp; número = ${e.form.undirected ? 'distancia (sin flechas: dos sentidos)' : 'costo, (≤ n) = capacidad'}`;
+  return `<p class="story">${e.story}</p>${netSvg(e, kind)}<p class="hint">${legend}</p>`;
+}
+
+function arcRows(f, withCost) {
+  return f.arcs.map((a, i) => {
+    const cap = a[2] && a[2] !== '-' ? inp(a[2], 'cap') : inp('∞', 'ph');
+    return `<tr data-a="${i}" style="--c:#3a2f70"><td class="rowi">${i + 1}</td><td>${inp(a[0], 'name')}</td><td>${inp(a[1], 'name')}</td><td>${cap}</td>${withCost ? `<td>${inp(a[3])}</td>` : ''}<td class="x">✕</td></tr>`;
+  }).join('');
+}
+
+function maxflowCalc(e) {
+  const f = e.form;
+  return `<div class="calc">${tabs(3)}
+    <div class="g2">
+      ${fld(4, 'FUENTE (SALE TODO)', inp(f.source, 'sel hl'))}
+      ${fld(0, 'SUMIDERO (LLEGA TODO)', inp(f.sink, 'sel hl'))}
+    </div>
+    <div class="scroll"><table class="grid"><tr><th></th><th>${ni(2, 'DESDE')}</th><th>HACIA</th><th>CAPACIDAD</th><th></th></tr>${arcRows(f, false)}</table></div>
+    <div class="btnrow">${mk(3, '<span class="btn add">+ ARCO</span>')}</div>
+    <div class="btnrow">${mk(5, '<span class="btn start">▶ START</span>')}<span class="btn">LIMPIAR</span></div>
+  </div>`;
+}
+
+function maxflowSteps(e) {
+  const f = e.form;
+  return [
+    [1, 'Pestaña <b>4P FLUJO MÁXIMO</b>. Pulsa <b>LIMPIAR</b> (deja 3 filas con una <code>s</code> y una <code>t</code> de ejemplo: escribe encima).'],
+    [2, `Una fila por flecha: <b>DESDE</b> (donde nace), <b>HACIA</b> (donde apunta la punta) y <b>CAPACIDAD</b> (el número). Son <b>${f.arcs.length}</b> filas.`],
+    [3, `<b>+ ARCO</b> hasta tener ${f.arcs.length} filas (la ✕ borra una de más).`],
+    [4, `Ya con los arcos escritos: FUENTE <code>${f.source}</code> y SUMIDERO <code>${f.sink}</code>.`],
+    [5, '<b>▶ START</b>.'],
+  ];
+}
+
+function mincostCalc(e) {
+  const f = e.form;
+  const nodes = f.nodes.map(([k, v], i) => `<tr><td>${i === 0 ? mk(2, inp(k, 'name')) : inp(k, 'name')}</td><td>${inp(minus(v), Number(v) < 0 ? 'm' : Number(v) > 0 ? 'cap' : '')}</td><td class="x">✕</td></tr>`).join('');
+  return `<div class="calc">${tabs(4)}
+    <div class="sub2">NODOS CON OFERTA O DEMANDA</div>
+    <div class="scroll"><table class="grid"><tr><th>NODO</th><th>OFERTA (+) / DEMANDA (−)</th><th></th></tr>${nodes}</table></div>
+    <div class="btnrow"><span class="btn add">+ NODO</span></div>
+    <div class="sub2">ARCOS</div>
+    <div class="scroll"><table class="grid"><tr><th></th><th>${ni(3, 'DESDE')}</th><th>HACIA</th><th>CAPACIDAD</th><th>COSTO</th><th></th></tr>${arcRows(f, true)}</table></div>
+    <div class="btnrow">${mk(4, '<span class="btn add">+ ARCO</span>')}</div>
+    <div class="chk ${f.undirected ? 'yes' : ''}" style="margin-top:16px">${n(5)} <span class="bx">${f.undirected ? '✓' : ''}</span>CADA ARCO SIRVE EN LOS DOS SENTIDOS</div>
+    <div class="btnrow">${mk(6, '<span class="btn start">▶ START</span>')}<span class="btn">LIMPIAR</span></div>
+  </div>`;
+}
+
+function mincostSteps(e) {
+  const f = e.form;
+  return [
+    [1, 'Pestaña <b>5P COSTO MÍNIMO</b>. Pulsa <b>LIMPIAR</b>.'],
+    [2, `<b>NODOS</b>: nombre y número, <b>+</b> si ofrece y <b>−</b> si pide: ${f.nodes.map(([k, v]) => `<code>${k} ${v}</code>`).join(' ')}. Usa <b>+ NODO</b> para más filas.`],
+    [3, `<b>ARCOS</b>: una fila por flecha: DESDE, HACIA, CAPACIDAD (vacía = sin límite) y COSTO por unidad. Son <b>${f.arcs.length}</b>.`],
+    [4, `<b>+ ARCO</b> hasta tener ${f.arcs.length} filas.`],
+    [5, f.undirected ? '<b>Marca</b> la casilla de los dos sentidos.' : 'Casilla de los dos sentidos: <b>sin marcar</b>.'],
+    [6, '<b>▶ START</b>.'],
+  ];
+}
+
+// ---------- armar la página ----------
+const RENDER = {
+  lp: { pdf: lpPdf, calc: lpCalc, steps: lpSteps },
+  assign: { pdf: assignPdf, calc: assignCalc, steps: assignSteps },
+  maxflow: { pdf: (e) => netPdf(e, 'maxflow'), calc: maxflowCalc, steps: maxflowSteps },
+  mincost: { pdf: (e) => netPdf(e, 'mincost'), calc: mincostCalc, steps: mincostSteps },
+};
+
+function card(mod, e, k) {
+  const r = RENDER[mod.kind];
+  return `<article class="card">
+    <div class="hd"><span class="num">${mod.t}.${k + 1}</span><h3>${e.name}</h3><span class="src">${e.src}</span>
+      <a class="open" href="../index.html#m${e.m}" target="_blank" rel="noopener">VER EN LA CALCULADORA ▸</a></div>
+    <div class="body">
+      <div class="col"><p class="lbl">EN EL PDF</p>${r.pdf(e)}</div>
+      <div class="mid" aria-hidden="true">▶</div>
+      <div class="col"><p class="lbl">EN LA CALCULADORA</p>${r.calc(e)}</div>
+    </div>
+    <div class="foot">
+      ${steps(r.steps(e))}
+      <div class="tips"><h4>OJO EN ESTE EJERCICIO</h4><ul>${e.tips.map((x) => `<li>${x}</li>`).join('')}</ul>
+        <div class="ok"><b>RESULTADO ESPERADO</b>${e.expect}</div></div>
+    </div>
+  </article>`;
+}
+
+document.getElementById('dict').innerHTML = DICT.map(([a, b]) => (a === 'h' ? `<tr class="h"><td colspan="2">${b}</td></tr>` : `<tr><td>${a}</td><td>${b}</td></tr>`)).join('');
+document.getElementById('nav').innerHTML = '<a href="#antes">0 · ANTES</a>' + MODS.map((m) => `<a href="#${m.id}">${m.t} · ${m.title.split(' ·')[0]}</a>`).join('');
+document.getElementById('mods').innerHTML = MODS.map((mod) => `<section id="${mod.id}">
+  <h2 class="sec"><span class="t">${mod.t}</span>${mod.title} <span style="color:var(--mute);font-size:9px">· PESTAÑA ${MODE_TABS[mod.tab][0]} · ${mod.pdf}</span></h2>
+  <p class="lead">${mod.lead}</p>
+  ${mod.ex.map((e, k) => card(mod, e, k)).join('')}
+</section>`).join('');
+
+// Resaltar juntas la fila de la calculadora y su ecuación o flecha del PDF.
+document.querySelectorAll('.card').forEach((c) => {
+  const set = (a, on) => c.querySelectorAll(`[data-a="${a}"]`).forEach((el) => el.classList.toggle('on', on));
+  c.querySelectorAll('[data-a]').forEach((el) => {
+    el.addEventListener('mouseenter', () => set(el.dataset.a, true));
+    el.addEventListener('mouseleave', () => set(el.dataset.a, false));
+  });
+});
+</script>
+</body>
+</html>

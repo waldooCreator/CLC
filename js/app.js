@@ -438,9 +438,22 @@
 
   // ---------- Memorias fijas del informe ----------
   const presetList = $('#vault-presets');
+  const quickPick = $('#quick-pick');
   const modelKey = (f) => JSON.stringify([f.sense, f.c, f.signs, f.rows]);
 
+  // Selector rápido de arriba: tema N, ejercicio 1, 2 o 3.
+  function renderQuickPick() {
+    quickPick.innerHTML = SX.Vault.groups.map((g, t) => {
+      const items = SX.Vault.presets.filter((p) => p.group === g.key);
+      return `<div class="quick-row">
+        <span class="quick-topic"><b>TEMA ${t + 1}</b>${esc(g.short)}</span>
+        ${items.map((p, i) => `<button class="quick-ex${state.preset === p ? ' is-active' : ''}" type="button" data-preset="${p.slot}" title="${esc(p.name)}" aria-label="Tema ${t + 1}, ejercicio ${i + 1}: ${esc(p.name)}">${i + 1}</button>`).join('')}
+      </div>`;
+    }).join('');
+  }
+
   function renderPresets() {
+    renderQuickPick();
     presetList.innerHTML = SX.Vault.groups.map((g) => {
       const items = SX.Vault.presets.filter((p) => p.group === g.key);
       return `<details class="vault-group" ${items.includes(state.preset) || g.key === 'assign' ? 'open' : ''}>
@@ -475,14 +488,16 @@
     renderPresets();
   }
 
-  presetList.addEventListener('click', (e) => {
+  const onPresetClick = (e) => {
     const btn = e.target.closest('[data-preset]');
     if (!btn) return;
     const p = SX.Vault.presets.find((x) => x.slot === Number(btn.dataset.preset));
     Sound.coin();
     loadPreset(p);
     if (window.innerWidth < 1024) el.btnSolve.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  });
+  };
+  presetList.addEventListener('click', onPresetClick);
+  quickPick.addEventListener('click', onPresetClick);
 
   // Con una memoria del informe sin modificar, la gráfica usa los mismos ejes que el PDF.
   function presetView() {

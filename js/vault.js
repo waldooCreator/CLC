@@ -27,11 +27,11 @@
 
   const ARCS = (txt) => txt.trim().split(/\s*;\s*/).map((t) => t.split(/\s+/));
   const GROUPS = [
-    { key: 'simplex', title: 'PRIMER PREVIO · SIMPLEX REVISADO', doc: 'ejercicios-simplex-revisado.pdf' },
-    { key: 'assign', title: 'ASIGNACIÓN · KUHN-MUNKRES', doc: '02-asignacion-kuhn-munkres.pdf' },
-    { key: 'special', title: 'CASOS PARTICULARES DE ASIGNACIÓN', doc: '03-casos-particulares-asignacion.pdf' },
-    { key: 'maxflow', title: 'FLUJO MÁXIMO', doc: '04-flujo-maximo.pdf' },
-    { key: 'mincost', title: 'FLUJO A COSTO MÍNIMO', doc: '05-flujo-costo-minimo.pdf' },
+    { key: 'simplex', short: 'SIMPLEX', title: 'PRIMER PREVIO · SIMPLEX REVISADO', doc: 'ejercicios-simplex-revisado.pdf' },
+    { key: 'assign', short: 'ASIGNACIÓN', title: 'ASIGNACIÓN · KUHN-MUNKRES', doc: '02-asignacion-kuhn-munkres.pdf' },
+    { key: 'special', short: 'CASOS PARTIC.', title: 'CASOS PARTICULARES DE ASIGNACIÓN', doc: '03-casos-particulares-asignacion.pdf' },
+    { key: 'maxflow', short: 'FLUJO MÁX.', title: 'FLUJO MÁXIMO', doc: '04-flujo-maximo.pdf' },
+    { key: 'mincost', short: 'COSTO MÍN.', title: 'FLUJO A COSTO MÍNIMO', doc: '05-flujo-costo-minimo.pdf' },
   ];
 
   // Los ejercicios resueltos en los PDF de documentacion/, con el resultado que trae cada informe.
