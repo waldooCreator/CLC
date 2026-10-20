@@ -1,11 +1,11 @@
 # Archivos auxiliares de LaTeX (se regeneran al compilar con pdflatex)
-documentacion/*.aux
-documentacion/*.log
-documentacion/*.out
-documentacion/*.toc
-documentacion/*.synctex.gz
-documentacion/*.fls
-documentacion/*.fdb_latexmk
+documentacion/otros/*.aux
+documentacion/otros/*.log
+documentacion/otros/*.out
+documentacion/otros/*.toc
+documentacion/otros/*.synctex.gz
+documentacion/otros/*.fls
+documentacion/otros/*.fdb_latexmk
 
 # Sistema
 Thumbs.db
@@ -14,10 +14,10 @@ desktop.ini
 
 # Dependencias de las pruebas
 node_modules/
-documentacion/presentaciones/*.aux
-documentacion/presentaciones/*.log
-documentacion/presentaciones/*.out
-documentacion/presentaciones/*.nav
-documentacion/presentaciones/*.snm
-documentacion/presentaciones/*.toc
-documentacion/presentaciones/*.vrb
+documentacion/otros/presentaciones/*.aux
+documentacion/otros/presentaciones/*.log
+documentacion/otros/presentaciones/*.out
+documentacion/otros/presentaciones/*.nav
+documentacion/otros/presentaciones/*.snm
+documentacion/otros/presentaciones/*.toc
+documentacion/otros/presentaciones/*.vrb

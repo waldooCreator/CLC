@@ -7,7 +7,7 @@ import { loadSX } from './load.mjs';
 
 const SX = loadSX();
 const { Frac } = SX;
-const DOCS = join(dirname(fileURLToPath(import.meta.url)), '..', 'documentacion');
+const DOCS = join(dirname(fileURLToPath(import.meta.url)), '..', 'documentacion', 'otros');
 let failures = 0;
 const rows = [];
 

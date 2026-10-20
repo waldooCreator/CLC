@@ -38,7 +38,7 @@ Enlace directo a un ejercicio de la bóveda: `index.html#m11` lo carga e
   "tema N, ejercicio 1, 2 o 3" (los 15 ejercicios resueltos en los PDF).
 - **Bóveda de ejercicios**: guarda y recupera ejercicios, con las mismas 15
   memorias precargadas agrupadas por tema.
-- **Guía de entrada de datos**: `documentacion/guia-calculadora.html` muestra,
+- **Guía de entrada de datos**: `documentacion/otros/guia-calculadora.html` muestra,
   para cada ejercicio de los PDF, cómo se escribe en la calculadora.
 - **Explicar a detalle**: opcionalmente, una IA vía OpenRouter redacta la
   explicación de cada paso del cuaderno con lenguaje llano, en los cinco modos.
@@ -104,17 +104,19 @@ ningún lado ni queda en el código.
 
 ## Documentación
 
-En `documentacion/`, documentos en LaTeX con la explicación de cada método y
-ejercicios clásicos resueltos paso a paso (el PDF compilado está incluido):
+En `documentacion/` hay una carpeta por tema, y cada una tiene solo el PDF con la
+explicación del método y sus ejercicios resueltos paso a paso:
 
-| Documento | Tema |
+| Carpeta | Tema |
 |---|---|
-| `ejercicios-simplex-revisado` | Método Simplex Revisado (3 ejercicios) |
+| `01-simplex-revisado` | Método Simplex Revisado (3 ejercicios) |
 | `02-asignacion-kuhn-munkres` | Problema de asignación y método de Kuhn-Munkres (3 ejercicios) |
 | `03-casos-particulares-asignacion` | Casos particulares de la asignación (3 ejercicios) |
 | `04-flujo-maximo` | Problema de flujo máximo (3 ejercicios) |
 | `05-flujo-costo-minimo` | Problema de flujo a costo mínimo (3 ejercicios) |
 
-`documentacion/presentaciones/` tiene una presentación (Beamer) por tema. Los
-documentos usan `estilo-libro.sty` y las presentaciones `estilo-presentacion.sty`;
-se compilan con `pdflatex` dentro de su carpeta.
+Todo lo demás está en `documentacion/otros/`: las fuentes LaTeX de los PDF
+(`.tex` y `estilo-libro.sty`), la guía de la calculadora y `presentaciones/`,
+con una presentación (Beamer) por tema que usa `estilo-presentacion.sty`. Se
+compilan con `pdflatex` dentro de su carpeta. Si recompilas un documento, el PDF
+nuevo queda en `otros/`: muévelo a la carpeta de su tema.
