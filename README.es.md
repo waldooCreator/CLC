@@ -3,7 +3,7 @@
 <p align="center"><a href="README.md">English</a> · <strong>Español</strong></p>
 
 <p align="center">
-  <b>Una calculadora de Investigación de Operaciones con alma de arcade retro.</b><br>
+  <b>CLC — Simplex Arcade: una calculadora de Investigación de Operaciones con alma de arcade retro.</b><br>
   Simplex Revisado, dualidad, asignación, flujo máximo y flujo a costo mínimo — resueltos con fracciones exactas y explicados paso a paso como en una hoja de cuaderno.
 </p>
 
@@ -34,6 +34,7 @@
 - **Asignación (Kuhn-Munkres)** — método húngaro con casos particulares: problemas no balanceados (filas o columnas ficticias), maximización (pérdida de oportunidad), asignaciones prohibidas (costo M), agentes con varias tareas y aviso de óptimos múltiples.
 - **Flujo en redes** — flujo máximo con Edmonds-Karp y corte mínimo, y rutas más baratas sucesivas (Bellman-Ford) para el flujo a costo mínimo, con nodos ficticios y redes no dirigidas.
 - **Resultados comprobados** — cada respuesta se verifica de forma independiente con `javascript-lp-solver` 1.0.3; los problemas de redes también se resuelven como programación lineal y las asignaciones pequeñas por fuerza bruta. Solo aparece un aviso si algo no coincide.
+- **Ejercicios de libro a un clic** — el panel *Ejercicios de los PDF* carga en el formulario cualquiera de los 15 ejercicios resueltos en los PDF (tema 1–5 × ejercicio 1–3), listo para comparar con su informe.
 - **Bóveda de ejercicios** — 15 ejercicios de libro precargados por tema, más tus propios ejercicios guardados en `localStorage` con exportación e importación en JSON. Enlaces como `index.html#m11&run` cargan y resuelven un ejercicio.
 - **Sensación arcade** — fuentes Press Start 2P y VT323, líneas de monitor CRT y sonidos de 8 bits generados con la Web Audio API.
 - **Explicaciones con IA (opcional)** — "Explicar a detalle" le pide a un modelo gratuito de OpenRouter que explique cada paso del cuaderno con lenguaje llano. La clave se queda en el `localStorage` de tu navegador.
@@ -42,16 +43,16 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/readme/simplex.png" alt="Iteración 0 del Simplex Revisado con la inversa de la base, costos reducidos, razón mínima y matriz eta"><br><sub><b>1P · Simplex Revisado</b> — una iteración en el cuaderno</sub></td>
-    <td width="50%"><img src="docs/readme/graphic.png" alt="Gráfica del método gráfico con la región factible y el óptimo en (2, 6)"><br><sub><b>Método gráfico</b> — región factible y recorrido del Simplex</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/simplex.png" alt="Iteración 0 del Simplex Revisado con la inversa de la base, costos reducidos, razón mínima y matriz eta"><br><sub><b>1P · Simplex Revisado</b> — una iteración en el cuaderno</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/dual.png" alt="Pantalla de primal contra dual, ambos óptimos valen 36"><br><sub><b>2P · Dualidad</b> — primal vs dual, Z* = W*</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/readme/dual.png" alt="Pantalla de primal contra dual, ambos óptimos valen 36"><br><sub><b>2P · Dualidad</b> — primal vs dual, Z* = W*</sub></td>
-    <td width="50%"><img src="docs/readme/assignment.png" alt="Tabla del método húngaro con líneas que tapan los ceros y ceros asignados encerrados"><br><sub><b>3P · Asignación</b> — líneas y asignación final</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/graphic.png" alt="Gráfica del método gráfico con la región factible y el óptimo en (2, 6)"><br><sub><b>Método gráfico</b> — región factible y recorrido del Simplex</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/mincost.png" alt="Resultado de flujo a costo mínimo con costo total 1020 y envíos por arco"><br><sub><b>5P · Costo mínimo</b> — envíos y costo total</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/readme/maxflow.png" alt="Dibujo de la red con el corte mínimo resaltado con arcos punteados, capacidad 14"><br><sub><b>4P · Flujo máximo</b> — el corte mínimo iguala al flujo máximo</sub></td>
-    <td width="50%"><img src="docs/readme/mincost.png" alt="Resultado de flujo a costo mínimo con costo total 1020 y envíos por arco"><br><sub><b>5P · Costo mínimo</b> — envíos y costo total</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/assignment.png" alt="Tabla del método húngaro con líneas que tapan los ceros y ceros asignados encerrados"><br><sub><b>3P · Asignación</b> — líneas y asignación final</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/maxflow.png" alt="Dibujo de la red con el corte mínimo resaltado con arcos punteados, capacidad 14"><br><sub><b>4P · Flujo máximo</b> — el corte mínimo iguala al flujo máximo</sub></td>
   </tr>
 </table>
 
@@ -71,25 +72,32 @@
 
 ```mermaid
 flowchart LR
-  UI["index.html + app.js<br/>interfaz arcade y estado"]
+  UI["index.html + app.js<br/>interfaz arcade, estado y orquestación"]
+  FORMS["netforms.js · netmodel.js<br/>formularios de redes y validación"]
   LP["solver.js · dual.js · graphic.js<br/>Simplex, dualidad, método gráfico"]
   NET["assign.js · maxflow.js · mincost.js<br/>asignación y flujo en redes"]
   CORE["fraction.js · linalg.js<br/>racionales exactos con BigInt"]
-  NB["notebook.js · render.js"]
-  NNB["netforms.js · netnotebook.js<br/>netdraw.js · netui.js"]
-  VER["verify.js · netverify.js"]
+  NB["notebook.js · render.js<br/>hojas de cuaderno"]
+  NNB["netnotebook.js · netdraw.js · netui.js<br/>cuadernos y dibujos de redes"]
+  VER["verify.js · netverify.js<br/>comprobaciones independientes"]
   LIB[("javascript-lp-solver")]
   VAULT[("vault.js<br/>localStorage")]
-  AI["ai.js"] --> OR[("API de OpenRouter")]
+  AI["ai.js"]
+  OR[("API de OpenRouter")]
 
-  UI --> LP & NET
-  LP & NET --> CORE
-  LP --> NB
-  NET --> NNB
-  LP & NET --> VER
+  UI -->|lee el modelo| FORMS
+  UI -->|1 resuelve| LP
+  UI -->|1 resuelve| NET
+  UI -->|2 resultados| NB
+  UI -->|2 resultados| NNB
+  UI -->|3 comprueba| VER
+  LP --> CORE
+  NET --> CORE
+  VER -->|resuelve las redes como PL| LP
   VER --> LIB
   UI --> VAULT
   UI --> AI
+  AI --> OR
 ```
 
 ## Cómo empezar
@@ -115,8 +123,13 @@ npm install
 node run.mjs      # los 15 ejercicios: calculadora = libro = PDF = PL = librería
 node bordes.mjs   # casos borde y explicación con IA simulada
 node dump.mjs 11  # imprime el cuaderno de un ejercicio en texto
-node ui.mjs       # opcional: clics reales en Firefox (requiere Playwright)
+
+# opcional: clics reales en Firefox (Playwright no es dependencia, instálalo antes)
+npm i --no-save playwright@1.48.2 && npx playwright install firefox
+node ui.mjs
 ```
+
+`npm test` es un atajo de `node run.mjs`.
 
 ### Opcional: explicaciones con IA
 
@@ -150,7 +163,7 @@ CLC/
 | `04-flujo-maximo` | Flujo máximo |
 | `05-flujo-costo-minimo` | Flujo a costo mínimo |
 
-Los ejercicios vienen de libros clásicos de Investigación de Operaciones (Hillier y Lieberman, Taha, Winston, Anderson-Sweeney-Williams). En `documentacion/otros/` están las fuentes LaTeX, las presentaciones Beamer y una guía en HTML que muestra cómo escribir cada ejercicio en la calculadora.
+Los ejercicios están adaptados de libros clásicos de Investigación de Operaciones (Hillier y Lieberman, Taha, Winston, Anderson-Sweeney-Williams). En `documentacion/otros/` están las fuentes LaTeX, las presentaciones Beamer y una guía en HTML que muestra cómo escribir cada ejercicio en la calculadora.
 
 ## Autor
 

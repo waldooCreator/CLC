@@ -3,7 +3,7 @@
 <p align="center"><strong>English</strong> · <a href="README.es.md">Español</a></p>
 
 <p align="center">
-  <b>An Operations Research calculator with a retro arcade soul.</b><br>
+  <b>CLC — Simplex Arcade: an Operations Research calculator with a retro arcade soul.</b><br>
   Revised Simplex, duality, assignment, maximum flow and minimum-cost flow — solved with exact fractions and explained step by step like a handwritten notebook.
 </p>
 
@@ -34,6 +34,7 @@
 - **Assignment (Kuhn–Munkres)** — Hungarian method with special cases: unbalanced problems (dummy rows/columns), maximization (opportunity loss), forbidden assignments (cost M), agents with several tasks, and a multiple-optima warning.
 - **Network flows** — Edmonds–Karp maximum flow with minimum cut, and successive shortest paths (Bellman–Ford) for minimum-cost flow, including dummy nodes and undirected networks.
 - **Cross-checked results** — every answer is verified independently against `javascript-lp-solver` 1.0.3; network problems are also re-solved as linear programs, and small assignments by brute force. A warning appears only if something disagrees.
+- **One-click textbook exercises** — the *Ejercicios de los PDF* panel loads any of the 15 exercises solved in the PDFs (topic 1–5 × exercise 1–3) straight into the form, ready to compare with its report.
 - **Exercise vault** — 15 textbook exercises preloaded by topic, plus your own saved exercises in `localStorage` with JSON export/import. Deep links like `index.html#m11&run` load and solve an exercise.
 - **Arcade feel** — Press Start 2P and VT323 fonts, CRT scanlines and 8-bit sounds generated with the Web Audio API.
 - **Optional AI explanations** — "Explicar a detalle" asks a free model on OpenRouter to explain each notebook step in plain language. The API key stays in your browser's `localStorage`.
@@ -42,16 +43,16 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/readme/simplex.png" alt="Revised Simplex iteration 0 with the inverse basis, reduced costs, ratio test and eta matrix"><br><sub><b>1P · Revised Simplex</b> — one iteration in the notebook</sub></td>
-    <td width="50%"><img src="docs/readme/graphic.png" alt="Graphical method plot showing the feasible region and the optimum at (2, 6)"><br><sub><b>Graphical method</b> — feasible region and Simplex path</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/simplex.png" alt="Revised Simplex iteration 0 with the inverse basis, reduced costs, ratio test and eta matrix"><br><sub><b>1P · Revised Simplex</b> — one iteration in the notebook</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/dual.png" alt="Primal versus dual result screen, both optima equal 36"><br><sub><b>2P · Duality</b> — primal vs dual, Z* = W*</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/readme/dual.png" alt="Primal versus dual result screen, both optima equal 36"><br><sub><b>2P · Duality</b> — primal vs dual, Z* = W*</sub></td>
-    <td width="50%"><img src="docs/readme/assignment.png" alt="Hungarian method table with covering lines and circled assigned zeros"><br><sub><b>3P · Assignment</b> — covering lines and final assignment</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/graphic.png" alt="Graphical method plot showing the feasible region and the optimum at (2, 6)"><br><sub><b>Graphical method</b> — feasible region and Simplex path</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/mincost.png" alt="Minimum-cost flow result with total cost 1020 and shipments per arc"><br><sub><b>5P · Minimum-cost flow</b> — shipments and total cost</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/readme/maxflow.png" alt="Network drawing with the minimum cut highlighted by dashed arcs, capacity 14"><br><sub><b>4P · Maximum flow</b> — minimum cut equals max flow</sub></td>
-    <td width="50%"><img src="docs/readme/mincost.png" alt="Minimum-cost flow result with total cost 1020 and shipments per arc"><br><sub><b>5P · Minimum-cost flow</b> — shipments and total cost</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/assignment.png" alt="Hungarian method table with covering lines and circled assigned zeros"><br><sub><b>3P · Assignment</b> — covering lines and final assignment</sub></td>
+    <td width="50%" valign="top"><img src="docs/readme/maxflow.png" alt="Network drawing with the minimum cut highlighted by dashed arcs, capacity 14"><br><sub><b>4P · Maximum flow</b> — minimum cut equals max flow</sub></td>
   </tr>
 </table>
 
@@ -71,25 +72,32 @@
 
 ```mermaid
 flowchart LR
-  UI["index.html + app.js<br/>arcade UI and state"]
+  UI["index.html + app.js<br/>arcade UI, state and orchestration"]
+  FORMS["netforms.js · netmodel.js<br/>network forms and validation"]
   LP["solver.js · dual.js · graphic.js<br/>Simplex, duality, graphical method"]
   NET["assign.js · maxflow.js · mincost.js<br/>assignment and network flows"]
   CORE["fraction.js · linalg.js<br/>exact BigInt rationals"]
-  NB["notebook.js · render.js"]
-  NNB["netforms.js · netnotebook.js<br/>netdraw.js · netui.js"]
-  VER["verify.js · netverify.js"]
+  NB["notebook.js · render.js<br/>notebook pages"]
+  NNB["netnotebook.js · netdraw.js · netui.js<br/>network notebooks and drawings"]
+  VER["verify.js · netverify.js<br/>independent cross-checks"]
   LIB[("javascript-lp-solver")]
   VAULT[("vault.js<br/>localStorage")]
-  AI["ai.js"] --> OR[("OpenRouter API")]
+  AI["ai.js"]
+  OR[("OpenRouter API")]
 
-  UI --> LP & NET
-  LP & NET --> CORE
-  LP --> NB
-  NET --> NNB
-  LP & NET --> VER
+  UI -->|reads model| FORMS
+  UI -->|1 solve| LP
+  UI -->|1 solve| NET
+  UI -->|2 results| NB
+  UI -->|2 results| NNB
+  UI -->|3 check| VER
+  LP --> CORE
+  NET --> CORE
+  VER -->|re-solves networks as LP| LP
   VER --> LIB
   UI --> VAULT
   UI --> AI
+  AI --> OR
 ```
 
 ## Getting started
@@ -115,8 +123,13 @@ npm install
 node run.mjs      # the 15 exercises: calculator = textbook = PDF = LP = library
 node bordes.mjs   # edge cases and a mocked AI explanation
 node dump.mjs 11  # print the notebook of one exercise as text
-node ui.mjs       # optional: real clicks in Firefox (needs Playwright)
+
+# optional: real clicks in Firefox (Playwright is not a dependency, install it first)
+npm i --no-save playwright@1.48.2 && npx playwright install firefox
+node ui.mjs
 ```
+
+`npm test` is a shortcut for `node run.mjs`.
 
 ### Optional: AI explanations
 
