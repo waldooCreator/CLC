@@ -1,122 +1,157 @@
-# CLC — Calculadora de Investigación de Operaciones
+<p align="center"><img src="docs/readme/banner.svg" width="100%" alt="CLC — Operations Research Calculator, pixel-art header"></p>
 
-Calculadora web para Investigación de Operaciones. Resuelve problemas de
-programación lineal con el **Método Simplex Revisado**, construye y resuelve el
-**problema dual**, y resuelve problemas de **asignación** (método de
-Kuhn-Munkres), **flujo máximo** y **flujo a costo mínimo**. Muestra cada paso
-como si estuviera escrito a mano en una hoja de cuaderno.
+<p align="center"><strong>English</strong> · <a href="README.es.md">Español</a></p>
 
-Interfaz de estética arcade retro.
+<p align="center">
+  <b>An Operations Research calculator with a retro arcade soul.</b><br>
+  Revised Simplex, duality, assignment, maximum flow and minimum-cost flow — solved with exact fractions and explained step by step like a handwritten notebook.
+</p>
 
-## Cómo abrirla
+<p align="center">
+  <img src="https://img.shields.io/badge/HTML5-161233?style=for-the-badge&logo=html5&logoColor=7cfc9a" alt="HTML5">
+  <img src="https://img.shields.io/badge/JavaScript-161233?style=for-the-badge&logo=javascript&logoColor=7cfc9a" alt="JavaScript">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-161233?style=for-the-badge&logo=tailwindcss&logoColor=7cfc9a" alt="Tailwind CSS">
+  <img src="https://img.shields.io/badge/SVG-161233?style=for-the-badge&logo=svg&logoColor=7cfc9a" alt="SVG">
+  <img src="https://img.shields.io/badge/Node.js_tests-161233?style=for-the-badge&logo=nodedotjs&logoColor=7cfc9a" alt="Node.js tests">
+  <img src="https://img.shields.io/badge/LaTeX-161233?style=for-the-badge&logo=latex&logoColor=7cfc9a" alt="LaTeX">
+  <img src="https://img.shields.io/badge/exercises-15%2F15_verified-7cfc9a?style=for-the-badge&labelColor=161233" alt="15/15 exercises verified">
+</p>
 
-Doble clic en `index.html`. No necesita servidor, ni instalación, ni conexión
-para calcular: todo corre en el navegador.
+<p align="center">
+  <img src="docs/readme/hero.png" width="100%" alt="Simplex Arcade main screen: Wyndor Glass solved with the Revised Simplex method, optimum Z* = 36">
+</p>
 
-Enlace directo a un ejercicio de la bóveda: `index.html#m11` lo carga e
-`index.html#m11&run` además lo resuelve.
+> The interface is in Spanish (it was built for an Operations Research course). Everything runs in the browser: no server, no build step, no install.
 
-## Qué hace
+## Features
 
-| Modo | Qué resuelve | Método que muestra paso a paso |
-|---|---|---|
-| **1P Simplex Revisado** | Programación lineal | Forma producto de la inversa: B⁻¹, π = c_B B⁻¹, costos reducidos, razón mínima, matrices eta. Gran M y Dos Fases |
-| **2P Dualidad** | El dual de un PL | Reglas de signos, solución del dual, dualidad fuerte, precios sombra y holgura complementaria |
-| **3P Asignación** | Agentes ↔ tareas, minimizando o maximizando | Método húngaro: restar mínimos, tapar ceros con el menor número de líneas, ajustar y asignar |
-| **4P Flujo máximo** | Cuánto se puede enviar de una fuente a un sumidero | Ford-Fulkerson con búsqueda en anchura (Edmonds-Karp) y corte mínimo |
-| **5P Costo mínimo** | Enviar ofertas a demandas gastando lo menos | Rutas más baratas sucesivas (red residual con Bellman-Ford) |
+- **Five game modes** — `1P` Revised Simplex, `2P` Duality, `3P` Assignment, `4P` Maximum flow and `5P` Minimum-cost flow, each with its own form and result screen.
+- **Exact arithmetic** — every computation uses rational numbers backed by `BigInt` (plus symbolic Big M values), so there are no floating-point rounding errors.
+- **Step-by-step notebook** — each solution is written out as a lined notebook page: B⁻¹, π = c_B·B⁻¹, reduced costs, ratio test and eta matrices; Hungarian tables with covering lines and circled zeros; augmenting paths drawn on the network.
+- **Revised Simplex** — product form of the inverse, Big M or Two-Phase for artificial variables, and variables that are ≥ 0, ≤ 0 or free.
+- **Duality** — builds the dual with the sign rules, solves it, and checks strong duality, shadow prices and complementary slackness.
+- **Graphical method** — optional intercepts, corner points and an SVG plot for two-variable models.
+- **Assignment (Kuhn–Munkres)** — Hungarian method with special cases: unbalanced problems (dummy rows/columns), maximization (opportunity loss), forbidden assignments (cost M), agents with several tasks, and a multiple-optima warning.
+- **Network flows** — Edmonds–Karp maximum flow with minimum cut, and successive shortest paths (Bellman–Ford) for minimum-cost flow, including dummy nodes and undirected networks.
+- **Cross-checked results** — every answer is verified independently against `javascript-lp-solver` 1.0.3; network problems are also re-solved as linear programs, and small assignments by brute force. A warning appears only if something disagrees.
+- **Exercise vault** — 15 textbook exercises preloaded by topic, plus your own saved exercises in `localStorage` with JSON export/import. Deep links like `index.html#m11&run` load and solve an exercise.
+- **Arcade feel** — Press Start 2P and VT323 fonts, CRT scanlines and 8-bit sounds generated with the Web Audio API.
+- **Optional AI explanations** — "Explicar a detalle" asks a free model on OpenRouter to explain each notebook step in plain language. The API key stays in your browser's `localStorage`.
 
-- **Casos particulares de la asignación**: problema no balanceado (filas o
-  columnas ficticias), maximización (pérdida de oportunidad), asignaciones
-  prohibidas (costo M), un agente con varias tareas (capacidad) y aviso de
-  óptimos múltiples.
-- **Redes**: dibujo de cada iteración con el camino resaltado, arcos que
-  devuelven flujo, corte mínimo, nodos ficticios cuando la oferta y la demanda no
-  coinciden, y redes no dirigidas (ruta más corta).
-- **Despejes y método gráfico** opcionales en Simplex y Dualidad.
-- **Ejercicios de los PDF**: panel arriba a la izquierda para cargar con un clic
-  "tema N, ejercicio 1, 2 o 3" (los 15 ejercicios resueltos en los PDF).
-- **Bóveda de ejercicios**: guarda y recupera ejercicios, con las mismas 15
-  memorias precargadas agrupadas por tema.
-- **Guía de entrada de datos**: `documentacion/otros/guia-calculadora.html` muestra,
-  para cada ejercicio de los PDF, cómo se escribe en la calculadora.
-- **Explicar a detalle**: opcionalmente, una IA vía OpenRouter redacta la
-  explicación de cada paso del cuaderno con lenguaje llano, en los cinco modos.
+## Screenshots
 
-## Precisión
+<table>
+  <tr>
+    <td width="50%"><img src="docs/readme/simplex.png" alt="Revised Simplex iteration 0 with the inverse basis, reduced costs, ratio test and eta matrix"><br><sub><b>1P · Revised Simplex</b> — one iteration in the notebook</sub></td>
+    <td width="50%"><img src="docs/readme/graphic.png" alt="Graphical method plot showing the feasible region and the optimum at (2, 6)"><br><sub><b>Graphical method</b> — feasible region and Simplex path</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/readme/dual.png" alt="Primal versus dual result screen, both optima equal 36"><br><sub><b>2P · Duality</b> — primal vs dual, Z* = W*</sub></td>
+    <td width="50%"><img src="docs/readme/assignment.png" alt="Hungarian method table with covering lines and circled assigned zeros"><br><sub><b>3P · Assignment</b> — covering lines and final assignment</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/readme/maxflow.png" alt="Network drawing with the minimum cut highlighted by dashed arcs, capacity 14"><br><sub><b>4P · Maximum flow</b> — minimum cut equals max flow</sub></td>
+    <td width="50%"><img src="docs/readme/mincost.png" alt="Minimum-cost flow result with total cost 1020 and shipments per arc"><br><sub><b>5P · Minimum-cost flow</b> — shipments and total cost</sub></td>
+  </tr>
+</table>
 
-Los cálculos usan **aritmética racional exacta** con BigInt (sin errores de
-punto flotante). Cada resultado se contrasta de forma independiente:
+## Tech stack
 
-- Simplex y Dualidad, contra la librería `javascript-lp-solver` 1.0.3.
-- Asignación, flujo máximo y costo mínimo: el mismo problema se plantea como
-  programación lineal y se resuelve con el Simplex Revisado exacto y con la
-  librería; en asignación también se prueban todas las permutaciones.
-
-La pantalla solo muestra un aviso si algo no coincide.
-
-## Estructura
-
-| Archivo | Rol |
+| Layer | Tools |
 |---|---|
-| `js/fraction.js` | Fracciones exactas con BigInt y valores con Gran M |
-| `js/linalg.js` | Álgebra matricial: inversa, productos, submatrices |
-| `js/solver.js` | Estandarización del modelo y motor del Simplex Revisado |
-| `js/dual.js` | Construcción del dual y comprobaciones de dualidad |
-| `js/graphic.js` | Método gráfico y dibujo del SVG |
-| `js/assign.js` | Método húngaro y casos particulares de la asignación |
-| `js/maxflow.js` | Flujo máximo (Edmonds-Karp) y corte mínimo |
-| `js/mincost.js` | Flujo a costo mínimo (rutas más baratas sucesivas) |
-| `js/netmodel.js` | Lectura y validación de los formularios de asignación y redes |
-| `js/netverify.js` | Modelos de PL equivalentes y verificación cruzada |
-| `js/netdraw.js` | Dibujo de redes en SVG |
-| `js/netnotebook.js` | Pasos de asignación y redes en formato hoja de cuaderno |
-| `js/netforms.js` | Formularios de los modos 3P, 4P y 5P |
-| `js/netui.js` | Pantallas de resultado de los modos 3P, 4P y 5P |
-| `js/notebook.js` | Redacción de los pasos en formato hoja de cuaderno |
-| `js/render.js` | Pantallas de resultado de Simplex y Dualidad |
-| `js/verify.js` | Verificación contra la librería externa |
-| `js/vault.js` | Bóveda de ejercicios en localStorage y memorias precargadas |
-| `js/ai.js` | Cliente de OpenRouter para las explicaciones |
-| `js/app.js` | Interfaz y estado |
+| Interface | HTML5, vanilla JavaScript (IIFE modules on a shared `SX` namespace), Tailwind CSS via CDN, hand-written `arcade.css` |
+| Math engine | Custom `BigInt` fractions, matrix algebra, Revised Simplex, Hungarian method, Edmonds–Karp, successive shortest paths |
+| Graphics | Inline SVG for plots and network drawings, Web Audio API for sounds |
+| Verification | `javascript-lp-solver` 1.0.3 (browser and Node.js), brute-force permutations |
+| Tests | Node.js scripts; optional UI test with Playwright + Firefox |
+| Documentation | LaTeX books and Beamer slide decks, compiled with `pdflatex` |
+| Optional AI | OpenRouter API (free models) |
 
-## Pruebas
+## Architecture
 
+```mermaid
+flowchart LR
+  UI["index.html + app.js<br/>arcade UI and state"]
+  LP["solver.js · dual.js · graphic.js<br/>Simplex, duality, graphical method"]
+  NET["assign.js · maxflow.js · mincost.js<br/>assignment and network flows"]
+  CORE["fraction.js · linalg.js<br/>exact BigInt rationals"]
+  NB["notebook.js · render.js"]
+  NNB["netforms.js · netnotebook.js<br/>netdraw.js · netui.js"]
+  VER["verify.js · netverify.js"]
+  LIB[("javascript-lp-solver")]
+  VAULT[("vault.js<br/>localStorage")]
+  AI["ai.js"] --> OR[("OpenRouter API")]
+
+  UI --> LP & NET
+  LP & NET --> CORE
+  LP --> NB
+  NET --> NNB
+  LP & NET --> VER
+  VER --> LIB
+  UI --> VAULT
+  UI --> AI
 ```
+
+## Getting started
+
+**Just open it.** Double-click `index.html`. Fonts, Tailwind and the verification library load from a CDN; all calculations run locally.
+
+Or serve it with any static server:
+
+```bash
+git clone https://github.com/waldooCreator/CLC.git
+cd CLC
+python3 -m http.server 5173
+# open http://localhost:5173
+```
+
+Jump straight to an exercise: `index.html#m11` loads vault exercise 11, and `index.html#m11&run` also solves it.
+
+### Run the tests
+
+```bash
 cd tests
 npm install
-node run.mjs      # los 15 ejercicios: calculadora = libro = PDF = PL = librería
-node bordes.mjs   # casos borde y explicación con IA simulada
-node dump.mjs 11  # imprime el cuaderno de una memoria en texto
-node ui.mjs       # opcional: clics reales en Firefox (requiere playwright)
+node run.mjs      # the 15 exercises: calculator = textbook = PDF = LP = library
+node bordes.mjs   # edge cases and a mocked AI explanation
+node dump.mjs 11  # print the notebook of one exercise as text
+node ui.mjs       # optional: real clicks in Firefox (needs Playwright)
 ```
 
-## Configurar la IA (opcional)
+### Optional: AI explanations
 
-La calculadora resuelve sin IA. Para activar "explicar a detalle":
+1. Create an account at [openrouter.ai](https://openrouter.ai) and generate an API key.
+2. Press **OPENROUTER** in the app, paste the key and pick a free model.
 
-1. Crea una cuenta en [openrouter.ai](https://openrouter.ai).
-2. Genera una API key en *Keys*.
-3. Pulsa **OPENROUTER** en la app y pégala.
+The calculator works fully without it.
 
-La clave se guarda únicamente en el localStorage de tu navegador; no se sube a
-ningún lado ni queda en el código.
+## Project structure
 
-## Documentación
+```text
+CLC/
+├── index.html            # single-page app
+├── css/arcade.css        # pixel/CRT styles
+├── js/                   # math engine, notebook rendering, UI, vault, AI client
+├── tests/                # Node.js test scripts (run, bordes, dump, ui)
+└── documentacion/
+    ├── 01-simplex-revisado/ … 05-flujo-costo-minimo/   # one PDF per topic
+    └── otros/            # LaTeX sources, Beamer decks, calculator guide
+```
 
-En `documentacion/` hay una carpeta por tema, y cada una tiene solo el PDF con la
-explicación del método y sus ejercicios resueltos paso a paso:
+## Documentation
 
-| Carpeta | Tema |
+`documentacion/` holds one PDF per topic, each explaining the method and solving three exercises step by step — the same 15 exercises preloaded in the vault:
+
+| Folder | Topic |
 |---|---|
-| `01-simplex-revisado` | Método Simplex Revisado (3 ejercicios) |
-| `02-asignacion-kuhn-munkres` | Problema de asignación y método de Kuhn-Munkres (3 ejercicios) |
-| `03-casos-particulares-asignacion` | Casos particulares de la asignación (3 ejercicios) |
-| `04-flujo-maximo` | Problema de flujo máximo (3 ejercicios) |
-| `05-flujo-costo-minimo` | Problema de flujo a costo mínimo (3 ejercicios) |
+| `01-simplex-revisado` | Revised Simplex method |
+| `02-asignacion-kuhn-munkres` | Assignment problem and Kuhn–Munkres |
+| `03-casos-particulares-asignacion` | Special cases of assignment |
+| `04-flujo-maximo` | Maximum flow |
+| `05-flujo-costo-minimo` | Minimum-cost flow |
 
-Todo lo demás está en `documentacion/otros/`: las fuentes LaTeX de los PDF
-(`.tex` y `estilo-libro.sty`), la guía de la calculadora y `presentaciones/`,
-con una presentación (Beamer) por tema que usa `estilo-presentacion.sty`. Se
-compilan con `pdflatex` dentro de su carpeta. Si recompilas un documento, el PDF
-nuevo queda en `otros/`: muévelo a la carpeta de su tema.
+Exercises are adapted from classic Operations Research textbooks (Hillier & Lieberman, Taha, Winston, Anderson–Sweeney–Williams). `documentacion/otros/` contains the LaTeX sources, the Beamer presentations and an HTML guide showing how to enter each exercise into the calculator.
+
+## Author
+
+**Walter Velasco** — [@waldooCreator](https://github.com/waldooCreator)
